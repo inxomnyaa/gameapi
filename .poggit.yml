@@ -1,0 +1,9 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/thebigsmileXD/gameapi
+branches:
+- master
+projects:
+  gameapi:
+    path: ""
+    model: virion
+    type: library
+...
