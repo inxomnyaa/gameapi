@@ -48,4 +48,10 @@ interface Game{
 	 * @param Arena $arena
 	 */
 	public function startArena(Arena $arena);
+
+	/**
+	 * TODO use this
+	 * @param Arena $arena
+	 */
+	public function stopArena(Arena $arena);
 }

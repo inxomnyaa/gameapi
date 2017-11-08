@@ -1,6 +1,6 @@
 name: gameapi
-version: 0.2.0
+version: 1.0.0
 antigen: xenialdan\gameapi
-api: [3.0.0-ALPHA7]
-php: [7.0]
+api: [3.0.0-ALPHA9]
+php: [7.2]
 author: XenialDan

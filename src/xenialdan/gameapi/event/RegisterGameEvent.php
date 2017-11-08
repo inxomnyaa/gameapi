@@ -4,8 +4,9 @@ namespace xenialdan\gameapi\event;
 
 use pocketmine\event\plugin\PluginEvent;
 use pocketmine\plugin\Plugin;
+use xenialdan\gameapi\Game;
 
-class StartGameEvent extends PluginEvent{
+class RegisterGameEvent extends PluginEvent{
 	public static $handlerList = null;
 
 	/** @var Plugin */
@@ -25,6 +26,9 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->game;
 	}
 
+	/**
+	 * @return Game|Plugin
+	 */
 	public function getGame(){
 print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->game;
