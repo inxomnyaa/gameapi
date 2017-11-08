@@ -14,6 +14,7 @@ use pocketmine\utils\Color;
 use pocketmine\utils\TextFormat;
 use xenialdan\gameapi\event\RegisterGameEvent;
 use xenialdan\gameapi\event\StopGameEvent;
+use xenialdan\gameapi\task\ArenaAsyncCopyTask;
 
 class API{
 	/** @var Game[] */
@@ -24,10 +25,8 @@ class API{
 	 * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
 	 */
 	public static function stopAll(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$server = Server::getInstance();
 		foreach ($server->getPluginManager()->getPlugins() as $game){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			$server->getPluginManager()->callEvent($ev = new StopGameEvent($game));
 		}
 		$server->broadcastMessage(TextFormat::GREEN . "Stopped all games.");
@@ -43,11 +42,9 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$server = Server::getInstance();
 		if (!$plugin instanceof Game && !is_string($plugin)) return false;
 		if (is_string($plugin)){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			$plugin = $server->getPluginManager()->getPlugin($plugin);
 		}
 		if (!$plugin instanceof Game){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			$server->broadcastMessage(TextFormat::RED . "There is no such plugin/minigame");
 			return false;
 		}
@@ -57,7 +54,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	}
 
 	public static function resetArena(Arena $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$level = $arena->getLevel();
 		$levelname = $arena->getLevelName();
 		#$server = $level->getServer();
@@ -66,17 +62,16 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$arena->stopArena(); //TODO use this
 
 		if ($server->isLevelLoaded($levelname)){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			#foreach ($level->getEntities() as $entity){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			#	$level->removeEntity($entity);
 			#}
 			#$server->unloadLevel($level);
 			Server::getInstance()->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT'). ' unloaded!');
 			$path1 = $arena->getOwningGame()->getDataFolder();
 			var_dump($path1);
-			if (self::copyr($path1 . "worlds/" . $levelname, $server->getDataPath() . "worlds/" . $levelname)){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
+
+			$server->getScheduler()->scheduleAsyncTask(new ArenaAsyncCopyTask($path1, $server->getDataPath(), $levelname));
+
 				// Delayed loading
 				$server->getScheduler()->scheduleDelayedRepeatingTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
 
@@ -90,21 +85,19 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 					 * @param Arena $arena
 					 */
 					public function __construct(Plugin $plugin, Arena $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 						parent::__construct($plugin);
 						$this->arena = $arena;
 						$this->levelname = $arena->getLevelName();
 					}
 
 					public function onRun(int $currentTick){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 						if ($this->arena instanceof Arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
-							if (!Server::getInstance()->isLevelLoaded($this->levelname))
-								Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . (Server::getInstance()->loadLevel($this->levelname) ? ' successfully' : ' NOT') . ' reloaded!');
+							if (Server::getInstance()->loadLevel($this->levelname)){
+								Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . ' successfully reloaded!');
+								Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
+							}
 							$this->tries++;
 							if ($this->tries >= 10){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								Server::getInstance()->broadcastMessage('Level ' . $this->levelname . ' could not be reloaded, disabling arena ' . $this->levelname . ' for the game ' . $this->arena->getOwningGame()->getPrefix());
 								$this->arena->getOwningGame()->removeArena($this->arena);
 
@@ -130,50 +123,40 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 					 * @param Arena $arena
 					 */
 					public function __construct(Plugin $plugin, Arena $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 						parent::__construct($plugin);
 						$this->arena = $arena;
 					}
 
 					public function onRun(int $currentTick){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 						if ($this->arena instanceof Arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 							#$this->arena->setState(Arena::IDLE);
 						}
 					}
 				}, 50);
-			}
 		}
 	}
 
 	public static function copyr($source, $dest){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		// Check for symlinks
 		if (is_link($source)){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			return symlink(readlink($source), $dest);
 		}
 
 		// Simple copy for a file
 		if (is_file($source)){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			return copy($source, $dest);
 		}
 
 		// Make destination directory
 		if (!is_dir($dest)){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			mkdir($dest);
 		}
 
 		// Loop through the folder
 		$dir = dir($source);
 		while (false !== $entry = $dir->read()){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			// Skip pointers
 			if ($entry == '.' || $entry == '..'){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 				continue;
 			}
 
@@ -201,12 +184,9 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Arena | null
 	 */
 	public static function getArenaOfPlayer(Player $player){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		foreach (self::getGames() as $game){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			#if (!self::isPlaying($game, $player)) continue;
 			foreach (self::getArenas($game) as $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 				if ($arena->inArena($player)) return $arena;
 			}
 		}
@@ -214,7 +194,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	}
 
 	public static function isPlaying(Plugin $game, Player $gamer){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return !is_null(self::isArena($game, $gamer->getLevel()));
 	}
 
@@ -223,7 +202,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param Plugin|Game $game
 	 */
 	public static function registerGame(Game $game){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		self::$games[$game->getName()] = $game;
 		Server::getInstance()->getPluginManager()->callEvent($ev = new RegisterGameEvent($game, $game));
 		Server::getInstance()->getLogger()->notice('Registered game ' . $ev->getName() . ' by ' . $ev->getGame()->getAuthors());
@@ -233,7 +211,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Game[]
 	 */
 	public static function getGames(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return self::$games;
 	}
 
@@ -242,7 +219,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return null|Game
 	 */
 	public static function getGame(string $name){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return self::$games[$name] ?? null;
 	}
 
@@ -252,7 +228,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Arena[]
 	 */
 	public static function getArenas(Plugin $game){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $game->getArenas();
 	}
 
@@ -262,9 +237,7 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return bool
 	 */
 	public static function isArena(Plugin $game, Level $level){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return (in_array($level->getName(), array_map(function (Arena $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			return $arena->getLevelName();
 		}, self::getArenas($game))));
 	}
@@ -275,9 +248,7 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Arena
 	 */
 	public static function getArenaByLevel(Plugin $game, Level $level){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$id = array_search($level, array_map(function (Arena $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			return $arena->getLevel();
 		}, $game->getArenas()));
 		return $game->getArenas()[$id];
@@ -288,7 +259,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Color
 	 */
 	public static function colorFromTextFormat($color){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		list($r, $g, $b) = str_split(ltrim(str_replace('>', '', str_replace('<span style=color:#', '', TextFormat::toHTML($color))), '#'));
 		return new Color(...array_map('hexdec', [$r . $r, $g . $g, $b . $b]));
 	}
@@ -299,7 +269,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return int $meta
 	 */
 	public static function getMetaByColor(string $color){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		switch ($color){
 			case TextFormat::BLACK:
 				return 15;
@@ -338,12 +307,9 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 
 
 	public static function setCustomColor(Item $item, Color $color){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		if (($hasTag = $item->hasCompoundTag())){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			$tag = $item->getNamedTag();
 		} else{
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			$tag = new CompoundTag("", []);
 		}
 		$tag->customColor = new IntTag("customColor", self::toRGB($color));
@@ -357,7 +323,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return int
 	 */
 	public static function toRGB(Color $color): int{
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return ($color->getR() << 16) | ($color->getG() << 8) | $color->getB() & 0xffffff;
 	}
 }

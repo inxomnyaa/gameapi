@@ -13,7 +13,6 @@ class RegisterGameEvent extends PluginEvent{
 	private $game;
 
 	public function __construct(Plugin $plugin, Plugin $game){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		parent::__construct($plugin);
 		$this->game = $game;
 	}
@@ -22,7 +21,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Plugin
 	 */
 	public function getPlugin(): Plugin{
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->game;
 	}
 
@@ -30,12 +28,10 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Game|Plugin
 	 */
 	public function getGame(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->game;
 	}
 
 	public function getName(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->getGame()->getName();
 	}
 }

@@ -23,54 +23,42 @@ class UpdateSignsEvent extends PluginEvent{
 	 * @param Arena $arena
 	 */
 	public function __construct(Plugin $plugin, $levels, Arena $arena){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		parent::__construct($plugin);
 		$this->levels = $levels;
 		$this->arena = $arena;
 	}
 
 	public function updateSigns(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		foreach ($this->levels as $level){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			if (!$level instanceof Level) continue;
 			foreach (array_filter($level->getTiles(), function (Tile $tile){ return $tile instanceof SignTile; }) as $tile){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 				/** @var SignTile $tile */
 				$lines = $tile->getText();
 				if (strtolower(TextFormat::clean($lines[0])) === strtolower(TextFormat::clean($this->arena->getOwningGame()->getPrefix()))){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 					if (TextFormat::clean($lines[1]) === $this->arena->getLevelName()){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 						$state = $this->arena->getState();
 						switch ($state){
 							case Arena::IDLE: {
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								$status = "Empty/Idle";
 								break;
 							}
 							case Arena::WAITING: {
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								$status = "Need players";
 								break;
 							}
 							case Arena::STARTING: {
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								$status = "Starting";
 								break;
 							}
 							case Arena::INGAME: {
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								$status = "Running";
 								break;
 							}
 							case Arena::STOP: {
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								$status = "Reloading";
 								break;
 							}
 							default: {
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 								$status = "Unknown";
 							}
 						}

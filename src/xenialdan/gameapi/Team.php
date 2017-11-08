@@ -32,11 +32,9 @@ class Team{
 	 * @param Player[] $players
 	 */
 	public function __construct(string $color = TextFormat::RESET, string $name = "", array $players = []){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->color = $color;
 		$this->name = $name;
 		foreach ($players as $player){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			$this->addPlayer($player);
 		}
 	}
@@ -45,7 +43,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param Player $player
 	 */
 	public function addPlayer(Player $player){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->players[$player->getLowerCaseName()] = $player;
 	}
 
@@ -53,7 +50,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param Player $player
 	 */
 	public function removePlayer(Player $player){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		unset($this->players[$player->getLowerCaseName()]);
 	}
 
@@ -63,16 +59,13 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return bool
 	 */
 	public function inTeam(Player ...$players){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		foreach ($players as $player){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 			if (!isset($this->players[$player->getLowerCaseName()])) return false;
 		}
 		return true;
 	}
 
 	public function __toString(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return "Team " . $this->getColor() . $this->getName() . TextFormat::RESET . ", players: " . (implode(", ", array_keys($this->getPlayers())));
 	}
 
@@ -80,7 +73,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return string
 	 */
 	public function getColor(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->color;
 	}
 
@@ -88,7 +80,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param string $color
 	 */
 	public function setColor(string $color){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->color = $color;
 	}
 
@@ -96,7 +87,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return string
 	 */
 	public function getName(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->name;
 	}
 
@@ -104,7 +94,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param string $name
 	 */
 	public function setName(string $name){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->name = $name;
 	}
 
@@ -112,7 +101,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Player[]
 	 */
 	public function getPlayers(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->players;
 	}
 
@@ -120,17 +108,14 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Player[]
 	 */
 	public function getInitialPlayers(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->initialplayers;
 	}
 
 	public function resetInitialPlayers(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->initialplayers = [];
 	}
 
 	public function updateInitialPlayers(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->initialplayers = $this->getPlayers();
 	}
 
@@ -138,7 +123,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param int $max
 	 */
 	public function setMaxPlayers(int $max){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->max = $max;
 	}
 
@@ -146,7 +130,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return int
 	 */
 	public function getMaxPlayers(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->max;
 	}
 
@@ -154,7 +137,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @param int $min
 	 */
 	public function setMinPlayers(int $min){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->min = $min;
 	}
 
@@ -162,12 +144,10 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return int
 	 */
 	public function getMinPlayers(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->min;
 	}
 
 	public function setSpawnOffset(Vector3 $offset){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		$this->spawnOffset = $offset;
 	}
 
@@ -175,7 +155,6 @@ print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 	 * @return Vector3
 	 */
 	public function getSpawnOffset(){
-print __CLASS__ . '-' . __LINE__ . ':';//TODO REMOVE
 		return $this->spawnOffset??new Vector3();
 	}
 }
