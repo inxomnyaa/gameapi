@@ -129,7 +129,7 @@ class API{
 
 					public function onRun(int $currentTick){
 						if ($this->arena instanceof Arena){
-							#$this->arena->setState(Arena::IDLE);
+							$this->arena->setState(Arena::IDLE);
 						}
 					}
 				}, 50);
