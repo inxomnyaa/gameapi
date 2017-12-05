@@ -131,24 +131,23 @@ class Arena{
 	 * @param string $teamname
 	 * @return bool
 	 */
-	public function joinTeam(Player $player, string $teamname = null){
-		if ($this->getState() === self::INGAME || $this->getState() === self::STOP){
+	public function joinTeam(Player $player, string $teamname = ""){
+		if (/*$this->getState() === self::INGAME || */
+			$this->getState() === self::STOP){
 			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "This arena did not stop properly");
-			if (count($this->getPlayers()) < 1){
-				$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "A mistake happened, trying to stop the arena. Please try again");
-				foreach ($this->getPlayers() as $player){
-					$this->removePlayer($player);
-				}
-				API::stop($this->getOwningGame());//TODO stop only arena instead
-				API::resetArena($this);
+			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "A mistake happened, trying to stop the arena. Please try again");
+			foreach ($this->getPlayers() as $player){
+				$this->removePlayer($player);
 			}
+			API::stop($this->getOwningGame());//TODO stop only arena instead
+			API::resetArena($this);
 			return false;
 		}
-		if ($this->getState() === self::INGAME){
+		if (($this->getState() === self::INGAME) && empty($teamname) && is_null(API::getArenaOfPlayer($player))){
 			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "This arena is already running");
 			return false;
 		}
-		if (!is_null($oldteam = $this->getTeamByPlayer($player))){
+		if (!is_null(($oldteam = $this->getTeamByPlayer($player)))){
 			$oldteam->removePlayer($player);
 		}
 		if (empty($teamname)){
@@ -167,23 +166,25 @@ class Arena{
 			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "Sorry, couldn't join because it's full");
 			return false;
 		}
-		var_dump($this->getLevel()->getSafeSpawn()->asVector3());
-		$player->teleport($this->getLevel()->getSafeSpawn()->asPosition());
-		$team->addPlayer($player);
-		Server::getInstance()->getLogger()->notice($player->getName() . ' added to ' . $teamname);
-		if ($this->getState() === self::WAITING || $this->getState() === self::IDLE || $this->getState() === self::STARTING){//TODO test
-			//TODO bossbar update/send
-			if (!isset($this->bossbarids['state'])){
-				$this->bossbarids['state'] = BossBarAPI::addBossBar([$player], "Initialising");
-			}
-			BossBarAPI::sendBossBarToPlayer($player, $this->bossbarids['state'], "Initialising");
-			$gamename = $this->owningGame->getName();
-			if (count($this->getPlayers()) < $this->getMinPlayers()) Server::getInstance()->broadcastMessage(TextFormat::RED . TextFormat::BOLD . "The game " . $gamename . " needs players!", Server::getInstance()->getDefaultLevel()->getPlayers());
-			elseif (count($this->getPlayers()) < $this->getMaxPlayers()) Server::getInstance()->broadcastMessage(TextFormat::DARK_GRAY . TextFormat::BOLD . "The game " . $gamename . " is not full, you can still join it!", Server::getInstance()->getDefaultLevel()->getPlayers());
-			BossBarAPI::setTitle($gamename . " Waiting for players... " . count($this->getPlayers()) . '/' . $this->getMinPlayers() . '-' . $this->getMaxPlayers(), $this->bossbarids['state'], $this->getPlayers());
+		if ($this->getState() === self::WAITING || $this->getState() === self::STARTING || $this->getState() === self::IDLE){
+			var_dump($this->getLevel()->getSafeSpawn()->asVector3());
+			$player->teleport($this->getLevel()->getSafeSpawn()->asPosition());
+			Server::getInstance()->getLogger()->notice($player->getName() . ' added to ' . $teamname);
+			if ($this->getState() === self::WAITING || $this->getState() === self::IDLE || $this->getState() === self::STARTING){//TODO test
+				//TODO bossbar update/send
+				if (!isset($this->bossbarids['state'])){
+					$this->bossbarids['state'] = BossBarAPI::addBossBar([$player], "Initialising");
+				}
+				BossBarAPI::sendBossBarToPlayer($player, $this->bossbarids['state'], "Initialising");
+				$gamename = $this->owningGame->getName();
+				if (count($this->getPlayers()) < $this->getMinPlayers()) Server::getInstance()->broadcastMessage(TextFormat::RED . TextFormat::BOLD . "The game " . $gamename . " needs players!", Server::getInstance()->getDefaultLevel()->getPlayers());
+				elseif (count($this->getPlayers()) < $this->getMaxPlayers()) Server::getInstance()->broadcastMessage(TextFormat::DARK_GRAY . TextFormat::BOLD . "The game " . $gamename . " is not full, you can still join it!", Server::getInstance()->getDefaultLevel()->getPlayers());
+				BossBarAPI::setTitle($gamename . " Waiting for players... " . count($this->getPlayers()) . '/' . $this->getMinPlayers() . '-' . $this->getMaxPlayers(), $this->bossbarids['state'], $this->getPlayers());
 
-			$this->setState(self::WAITING);
+				$this->setState(self::WAITING);
+			}
 		}
+		$team->addPlayer($player);
 		$player->sendMessage($team->getColor() . TextFormat::BOLD . "You joined the team " . $team->getName());
 		$player->setGamemode(Player::ADVENTURE);
 		if (($this->getState() === self::WAITING || $this->getState() === self::IDLE || $this->getState() === self::STARTING) && count($this->getPlayers()) >= $this->getMinPlayers()){

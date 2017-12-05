@@ -49,7 +49,7 @@ class API{
 			return false;
 		}
 		$server->getPluginManager()->callEvent($ev = new StopGameEvent($plugin));
-		$server->broadcastMessage(TextFormat::GREEN . "Stopped " . $ev->getName());
+		$server->broadcastMessage(TextFormat::GREEN . "Stopped " . ($ev->getName() ?? "nameless game"));
 		return true;
 	}
 
@@ -62,9 +62,9 @@ class API{
 		$arena->stopArena(); //TODO use this
 
 		if ($server->isLevelLoaded($levelname)){
-			#foreach ($level->getEntities() as $entity){
-			#	$level->removeEntity($entity);
-			#}
+			foreach ($level->getEntities() as $entity){
+				$level->removeEntity($entity);
+			}
 			#$server->unloadLevel($level);
 			Server::getInstance()->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT'). ' unloaded!');
 			$path1 = $arena->getOwningGame()->getDataFolder();
@@ -132,7 +132,7 @@ class API{
 							$this->arena->setState(Arena::IDLE);
 						}
 					}
-				}, 50);
+				}, 50 * 10);
 		}
 	}
 
@@ -237,7 +237,7 @@ class API{
 	 * @return bool
 	 */
 	public static function isArena(Plugin $game, Level $level){
-		return (in_array($level->getName(), array_map(function (Arena $arena){
+		return (in_array($level->getName(), array_map(function (Arena $arena){ //TODO check if this is the cause for crashes
 			return $arena->getLevelName();
 		}, self::getArenas($game))));
 	}

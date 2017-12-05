@@ -32,6 +32,6 @@ class RegisterGameEvent extends PluginEvent{
 	}
 
 	public function getName(){
-		$this->getGame()->getName();
+		return $this->getGame()->getName();
 	}
 }

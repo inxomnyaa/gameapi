@@ -18,7 +18,7 @@ class Team{
 	/**
 	 * @var string
 	 */
-	private $name = "";
+	private $name = "unnamed";
 	/**
 	 * @var string
 	 */
@@ -32,8 +32,8 @@ class Team{
 	 * @param Player[] $players
 	 */
 	public function __construct(string $color = TextFormat::RESET, string $name = "", array $players = []){
-		$this->color = $color;
-		$this->name = $name;
+		$this->setColor($color);
+		$this->setName($name);
 		foreach ($players as $player){
 			$this->addPlayer($player);
 		}
