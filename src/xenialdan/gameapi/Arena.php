@@ -8,6 +8,7 @@ use pocketmine\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
+use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 use xenialdan\BossBarAPI\API as BossBarAPI;
 use xenialdan\gameapi\event\UpdateSignsEvent;
@@ -31,13 +32,15 @@ class Arena{
 	private $teams;
 	/** @var int[] */
 	public $bossbarids = [];
+	public $settings;
 
 	/**
 	 * Arena constructor.
 	 * @param string $levelName
 	 * @param Plugin $game
+	 * @param Config|null $settings
 	 */
-	public function __construct(string $levelName, Plugin $game){
+	public function __construct(string $levelName, Plugin $game, Config $settings = null){
 		$this->owningGame = $game;
 		$this->levelName = $levelName;
 		try{
@@ -51,6 +54,7 @@ class Arena{
 			}
 			Server::getInstance()->loadLevel($levelName);
 			$this->level = Server::getInstance()->getLevelByName($levelName);
+			$this->setSettings($settings);
 			//Prevents changing the level
 			#$this->getLevel()->setAutoSave(false);
 		} catch (MiniGameException $exception){
@@ -322,5 +326,19 @@ class Arena{
 		return array_sum(array_map(function (Team $team){
 			return $team->getMinPlayers();
 		}, $this->getTeams()));
+	}
+
+	/**
+	 * @return Config|null
+	 */
+	public function getSettings(){
+		return $this->settings;
+	}
+
+	/**
+	 * @param Config|null $settings
+	 */
+	public function setSettings(?Config $settings){
+		$this->settings = $settings;
 	}
 }
