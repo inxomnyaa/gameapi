@@ -24,6 +24,7 @@ class Team{
 	 */
 	private $color = TextFormat::RESET;
 	private $spawnOffset;
+	private $spawn;
 
 	/**
 	 * Team constructor.
@@ -147,6 +148,9 @@ class Team{
 		return $this->min;
 	}
 
+	/**
+	 * @param Vector3 $offset
+	 */
 	public function setSpawnOffset(Vector3 $offset){
 		$this->spawnOffset = $offset;
 	}
@@ -156,5 +160,19 @@ class Team{
 	 */
 	public function getSpawnOffset(){
 		return $this->spawnOffset??new Vector3();
+	}
+
+	/**
+	 * @param Vector3 $vector3
+	 */
+	public function setSpawn(Vector3 $vector3){
+		$this->spawn = $vector3;
+	}
+
+	/**
+	 * @return Vector3
+	 */
+	public function getSpawn(){
+		return $this->spawn??new Vector3();
 	}
 }

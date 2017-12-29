@@ -122,6 +122,18 @@ class Arena{
 	}
 
 	/**
+	 * Returns the Team a player is in, or none
+	 * @param string $color
+	 * @return null|Team
+	 */
+	public function getTeamByColor(string $color){
+		foreach ($this->getTeams() as $team){
+			if ($team->getColor() === $color) return $team;
+		}
+		return null;
+	}
+
+	/**
 	 * Returns all teams
 	 * @return Team[]
 	 */
@@ -136,8 +148,7 @@ class Arena{
 	 * @return bool
 	 */
 	public function joinTeam(Player $player, string $teamname = ""){
-		if (/*$this->getState() === self::INGAME || */
-			$this->getState() === self::STOP){
+		if (($this->getState() === self::INGAME && count($this->getPlayers()) <= 0) ||	$this->getState() === self::STOP){
 			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "This arena did not stop properly");
 			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "A mistake happened, trying to stop the arena. Please try again");
 			foreach ($this->getPlayers() as $player){
@@ -306,6 +317,7 @@ class Arena{
 			$player->setHealth($player->getMaxHealth());
 			$player->setFood($player->getMaxFood());
 			$player->removeAllEffects();
+			$player->setAllowFlight(false);
 			$player->setDataFlag(Player::DATA_FLAGS, Player::DATA_FLAG_IMMOBILE, false);
 		}
 	}

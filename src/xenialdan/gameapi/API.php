@@ -66,73 +66,73 @@ class API{
 				$level->removeEntity($entity);
 			}
 			#$server->unloadLevel($level);
-			Server::getInstance()->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT'). ' unloaded!');
+			Server::getInstance()->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT') . ' unloaded!');
 			$path1 = $arena->getOwningGame()->getDataFolder();
 			var_dump($path1);
 
 			$server->getScheduler()->scheduleAsyncTask(new ArenaAsyncCopyTask($path1, $server->getDataPath(), $levelname));
 
-				// Delayed loading
-				$server->getScheduler()->scheduleDelayedRepeatingTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
+			// Delayed loading
+			$server->getScheduler()->scheduleDelayedRepeatingTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
 
-					private $arena;
-					private $levelname;
-					private $tries = 0;
+				private $arena;
+				private $levelname;
+				private $tries = 0;
 
-					/**
-					 * DelayLoadTask constructor.
-					 * @param Plugin $plugin
-					 * @param Arena $arena
-					 */
-					public function __construct(Plugin $plugin, Arena $arena){
-						parent::__construct($plugin);
-						$this->arena = $arena;
-						$this->levelname = $arena->getLevelName();
-					}
+				/**
+				 * DelayLoadTask constructor.
+				 * @param Plugin $plugin
+				 * @param Arena $arena
+				 */
+				public function __construct(Plugin $plugin, Arena $arena){
+					parent::__construct($plugin);
+					$this->arena = $arena;
+					$this->levelname = $arena->getLevelName();
+				}
 
-					public function onRun(int $currentTick){
-						if ($this->arena instanceof Arena){
-							if (Server::getInstance()->loadLevel($this->levelname)){
-								Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . ' successfully reloaded!');
-								Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
-							}
-							$this->tries++;
-							if ($this->tries >= 10){
-								Server::getInstance()->broadcastMessage('Level ' . $this->levelname . ' could not be reloaded, disabling arena ' . $this->levelname . ' for the game ' . $this->arena->getOwningGame()->getPrefix());
-								$this->arena->getOwningGame()->removeArena($this->arena);
-
-								Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
-								return;
-							}
-							$this->arena->setLevel(Server::getInstance()->getLevelByName($this->levelname));
-							//Prevents changing the level
-							#$this->arena->getLevel()->setAutoSave(false);
-							return;
-						} else
+				public function onRun(int $currentTick){
+					if ($this->arena instanceof Arena){
+						if (Server::getInstance()->loadLevel($this->levelname)){
+							Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . ' successfully reloaded!');
 							Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
-						return;
-					}
-				}, 20 * 10, 20);
-
-				// Delayed status setting
-				$server->getScheduler()->scheduleDelayedTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
-					public $arena;
-
-					/**
-					 * @param Plugin $plugin
-					 * @param Arena $arena
-					 */
-					public function __construct(Plugin $plugin, Arena $arena){
-						parent::__construct($plugin);
-						$this->arena = $arena;
-					}
-
-					public function onRun(int $currentTick){
-						if ($this->arena instanceof Arena){
-							$this->arena->setState(Arena::IDLE);
 						}
+						$this->tries++;
+						if ($this->tries >= 10){
+							Server::getInstance()->broadcastMessage('Level ' . $this->levelname . ' could not be reloaded, disabling arena ' . $this->levelname . ' for the game ' . $this->arena->getOwningGame()->getPrefix());
+							$this->arena->getOwningGame()->removeArena($this->arena);
+
+							Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
+							return;
+						}
+						$this->arena->setLevel(Server::getInstance()->getLevelByName($this->levelname));
+						//Prevents changing the level
+						#$this->arena->getLevel()->setAutoSave(false);
+						return;
+					} else
+						Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
+					return;
+				}
+			}, 20 * 10, 20);
+
+			// Delayed status setting
+			$server->getScheduler()->scheduleDelayedTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
+				public $arena;
+
+				/**
+				 * @param Plugin $plugin
+				 * @param Arena $arena
+				 */
+				public function __construct(Plugin $plugin, Arena $arena){
+					parent::__construct($plugin);
+					$this->arena = $arena;
+				}
+
+				public function onRun(int $currentTick){
+					if ($this->arena instanceof Arena){
+						$this->arena->setState(Arena::IDLE);
 					}
-				}, 50 * 10);
+				}
+			}, 50 * 10);
 		}
 	}
 
@@ -177,6 +177,17 @@ class API{
 		$arena = self::getArenaOfPlayer($player);
 		if (is_null($arena)) return null;
 		return $arena->getTeamByPlayer($player);
+	}
+
+	/** Gets the team a player is in
+	 * @param Player $player
+	 * @param string $color
+	 * @return null|Team
+	 */
+	public static function getTeamByColor(Player $player, string $color){//TODO check if mistake
+		$arena = self::getArenaOfPlayer($player);
+		if (is_null($arena)) return null;
+		return $arena->getTeamByColor($color);
 	}
 
 	/** Gets the arena a player is in
@@ -305,6 +316,44 @@ class API{
 		}
 	}
 
+	/**
+	 * Returns a fitting meta for a team color
+	 * @param int $meta
+	 * @return string $color a TextFormat constant
+	 */
+	public static function getColorByMeta(int $meta){
+		switch ($meta){
+			case 0:
+			default:
+				return TextFormat::WHITE;
+			case 1:
+				return TextFormat::GOLD;
+			case 2:
+				return TextFormat::LIGHT_PURPLE;
+			case 3:
+				return TextFormat::BLUE;
+			case 4:
+				return TextFormat::YELLOW;
+			case 5:
+				return TextFormat::GREEN;
+			case 7:
+				return TextFormat::DARK_GRAY;
+			case 8:
+				return TextFormat::GRAY;
+			case 9:
+				return TextFormat::AQUA;
+			case 10:
+				return TextFormat::DARK_PURPLE;
+			case 11:
+				return TextFormat::DARK_BLUE;
+			case 13:
+				return TextFormat::DARK_GREEN;
+			case 14:
+				return TextFormat::RED;
+			case 15:
+				return TextFormat::BLACK;
+		}
+	}
 
 	public static function setCustomColor(Item $item, Color $color){
 		if (($hasTag = $item->hasCompoundTag())){
