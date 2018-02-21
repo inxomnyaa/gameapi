@@ -14,6 +14,8 @@ use xenialdan\BossBarAPI\API as BossBarAPI;
 use xenialdan\gameapi\event\UpdateSignsEvent;
 use xenialdan\gameapi\task\StartTickerTask;
 
+define('DS', DIRECTORY_SEPARATOR);
+
 class Arena{
 	const IDLE = 0;
 	const WAITING = 1;
@@ -46,10 +48,10 @@ class Arena{
 		try{
 			Server::getInstance()->generateLevel($levelName, null, Generator::getGenerator('flat'));
 			//reset world
-			$path1 = $this->owningGame->getDataFolder() . "worlds\\";
+			$path1 = $this->owningGame->getDataFolder() . "worlds" . DS;
 			@mkdir($path1);
 
-			if (!API::copyr($this->owningGame->getServer()->getDataPath() . "worlds\\" . $levelName, $path1 . $levelName)){
+			if (!API::copyr($this->owningGame->getServer()->getDataPath() . "worlds" . DS . $levelName, $path1 . $levelName)){
 				throw new MiniGameException('Could not copy level to plugin..');
 			}
 			Server::getInstance()->loadLevel($levelName);
