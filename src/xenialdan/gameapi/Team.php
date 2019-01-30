@@ -56,7 +56,7 @@ class Team{
 
 	/**
 	 * Tests if the players are in this team
-	 * @param Player[] ...$players
+     * @param Player[] $players
 	 * @return bool
 	 */
 	public function inTeam(Player ...$players){

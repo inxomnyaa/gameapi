@@ -5,10 +5,9 @@ namespace xenialdan\gameapi;
 use pocketmine\item\Item;
 use pocketmine\level\Level;
 use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\nbt\tag\IntTag;
 use pocketmine\Player;
 use pocketmine\plugin\Plugin;
-use pocketmine\scheduler\PluginTask;
+use pocketmine\scheduler\Task;
 use pocketmine\Server;
 use pocketmine\utils\Color;
 use pocketmine\utils\TextFormat;
@@ -20,24 +19,27 @@ class API{
 	/** @var Game[] */
 	private static $games;
 
-	/**
-	 * Stops ALL games using the API
-	 * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
-	 */
+    /**
+     * Stops ALL games using the API
+     * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
+     * @throws \ReflectionException
+     */
 	public static function stopAll(){
 		$server = Server::getInstance();
 		foreach ($server->getPluginManager()->getPlugins() as $game){
-			$server->getPluginManager()->callEvent($ev = new StopGameEvent($game));
+            $ev = new StopGameEvent($game);
+            $ev->call();
 		}
 		$server->broadcastMessage(TextFormat::GREEN . "Stopped all games.");
 	}
 
-	/**
-	 * Stops 1 game using the API
-	 * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
-	 * @param Game|string $plugin a plugin or plugin name
-	 * @return bool
-	 */
+    /**
+     * Stops 1 game using the API
+     * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
+     * @param Game|string $plugin a plugin or plugin name
+     * @return bool
+     * @throws \ReflectionException
+     */
 	public static function stop($plugin){//TODO stop each arena
 		$server = Server::getInstance();
 		if (!$plugin instanceof Game && !is_string($plugin)) return false;
@@ -48,7 +50,8 @@ class API{
 			$server->broadcastMessage(TextFormat::RED . "There is no such plugin/minigame");
 			return false;
 		}
-		$server->getPluginManager()->callEvent($ev = new StopGameEvent($plugin));
+        $ev = new StopGameEvent($plugin);
+        $ev->call();
 		$server->broadcastMessage(TextFormat::GREEN . "Stopped " . ($ev->getName() ?? "nameless game"));
 		return true;
 	}
@@ -57,7 +60,8 @@ class API{
 		$level = $arena->getLevel();
 		$levelname = $arena->getLevelName();
 		#$server = $level->getServer();
-		$server = Server::getInstance();
+        $server = Server::getInstance();
+        $game = $arena->getOwningGame();
 
 		$arena->stopArena(); //TODO use this
 
@@ -66,15 +70,17 @@ class API{
 				$level->removeEntity($entity);
 			}
 			#$server->unloadLevel($level);
-			Server::getInstance()->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT') . ' unloaded!');
+            $server->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT') . ' unloaded!');
 			$path1 = $arena->getOwningGame()->getDataFolder();
 			var_dump($path1);
 
-			$server->getScheduler()->scheduleAsyncTask(new ArenaAsyncCopyTask($path1, $server->getDataPath(), $levelname));
+            $server->getAsyncPool()->submitTask(new ArenaAsyncCopyTask($path1, $server->getDataPath(), $levelname));
 
 			// Delayed loading
-			$server->getScheduler()->scheduleDelayedRepeatingTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
+            $game->getScheduler()->scheduleDelayedRepeatingTask(new class($arena->getOwningGame(), $arena) extends Task
+            {
 
+                private $plugin;
 				private $arena;
 				private $levelname;
 				private $tries = 0;
@@ -85,7 +91,7 @@ class API{
 				 * @param Arena $arena
 				 */
 				public function __construct(Plugin $plugin, Arena $arena){
-					parent::__construct($plugin);
+                    $this->plugin = $plugin;
 					$this->arena = $arena;
 					$this->levelname = $arena->getLevelName();
 				}
@@ -94,14 +100,14 @@ class API{
 					if ($this->arena instanceof Arena){
 						if (Server::getInstance()->loadLevel($this->levelname)){
 							Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . ' successfully reloaded!');
-							Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
+                            $this->plugin->getScheduler()->cancelTask($this->getTaskId());
 						}
 						$this->tries++;
 						if ($this->tries >= 10){
 							Server::getInstance()->broadcastMessage('Level ' . $this->levelname . ' could not be reloaded, disabling arena ' . $this->levelname . ' for the game ' . $this->arena->getOwningGame()->getPrefix());
 							$this->arena->getOwningGame()->removeArena($this->arena);
 
-							Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
+                            $this->plugin->getScheduler()->cancelTask($this->getTaskId());
 							return;
 						}
 						$this->arena->setLevel(Server::getInstance()->getLevelByName($this->levelname));
@@ -109,21 +115,21 @@ class API{
 						#$this->arena->getLevel()->setAutoSave(false);
 						return;
 					} else
-						Server::getInstance()->getScheduler()->cancelTask($this->getTaskId());
+                        $this->plugin->getScheduler()->cancelTask($this->getTaskId());
 					return;
 				}
 			}, 20 * 10, 20);
 
 			// Delayed status setting
-			$server->getScheduler()->scheduleDelayedTask(new class($arena->getOwningGame(), $arena) extends PluginTask{
+            $game->getScheduler()->scheduleDelayedTask(new class($arena) extends Task
+            {
 				public $arena;
 
 				/**
-				 * @param Plugin $plugin
 				 * @param Arena $arena
 				 */
-				public function __construct(Plugin $plugin, Arena $arena){
-					parent::__construct($plugin);
+                public function __construct(Arena $arena)
+                {
 					$this->arena = $arena;
 				}
 
@@ -149,7 +155,7 @@ class API{
 
 		// Make destination directory
 		if (!is_dir($dest)){
-			mkdir($dest);
+            @mkdir($dest, 0777, true);
 		}
 
 		// Loop through the folder
@@ -208,13 +214,15 @@ class API{
 		return !is_null(self::isArena($game, $gamer->getLevel()));
 	}
 
-	/**
-	 * Register a plugin as a game
-	 * @param Plugin|Game $game
-	 */
+    /**
+     * Register a plugin as a game
+     * @param Plugin|Game $game
+     * @throws \ReflectionException
+     */
 	public static function registerGame(Game $game){
 		self::$games[$game->getName()] = $game;
-		Server::getInstance()->getPluginManager()->callEvent($ev = new RegisterGameEvent($game, $game));
+        $ev = new RegisterGameEvent($game, $game);
+        $ev->call();
 		Server::getInstance()->getLogger()->notice('Registered game ' . $ev->getName() . ' by ' . $ev->getGame()->getAuthors());
 	}
 
@@ -361,7 +369,7 @@ class API{
 		} else{
 			$tag = new CompoundTag("", []);
 		}
-		$tag->customColor = new IntTag("customColor", self::toRGB($color));
+        $tag->setInt("customColor", self::toRGB($color));
 		$item->setCompoundTag($tag);
 		return $item;
 	}

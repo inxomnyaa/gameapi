@@ -2,7 +2,7 @@
 
 namespace xenialdan\gameapi;
 
-use pocketmine\level\generator\Generator;
+use pocketmine\level\generator\GeneratorManager;
 use pocketmine\level\Level;
 use pocketmine\Player;
 use pocketmine\plugin\Plugin;
@@ -46,7 +46,7 @@ class Arena{
 		$this->owningGame = $game;
 		$this->levelName = $levelName;
 		try{
-			Server::getInstance()->generateLevel($levelName, null, Generator::getGenerator('flat'));
+            Server::getInstance()->generateLevel($levelName, null, GeneratorManager::getGenerator('flat'));
 			//reset world
 			$path1 = $this->owningGame->getDataFolder() . "worlds" . DS;
 			@mkdir($path1);
@@ -143,12 +143,13 @@ class Arena{
 		return $this->teams;
 	}
 
-	/**
-	 * Returns the Team by the teamname
-	 * @param Player $player
-	 * @param string $teamname
-	 * @return bool
-	 */
+    /**
+     * Returns the Team by the teamname
+     * @param Player $player
+     * @param string $teamname
+     * @return bool
+     * @throws \ReflectionException
+     */
 	public function joinTeam(Player $player, string $teamname = ""){
 		if (($this->getState() === self::INGAME && count($this->getPlayers()) <= 0) ||	$this->getState() === self::STOP){
 			$player->sendMessage(TextFormat::RED . TextFormat::BOLD . "This arena did not stop properly");
@@ -242,7 +243,7 @@ class Arena{
 	public function startTimer(Game $game){
 		$this->resetTimer();
 		$this->setState(self::STARTING);
-		self::$tasks['ticker'] = Server::getInstance()->getScheduler()->scheduleRepeatingTask(new StartTickerTask($game, $this), 20);
+        self::$tasks['ticker'] = $game->getScheduler()->scheduleRepeatingTask(new StartTickerTask($game, $this), 20);
 	}
 
 	/**
@@ -265,7 +266,7 @@ class Arena{
 
 	public function resetTimer(){
 		$this->setState(self::WAITING);
-		if (isset(self::$tasks['ticker'])) Server::getInstance()->getScheduler()->cancelTask(self::$tasks['ticker']->getTaskId());
+        if (isset(self::$tasks['ticker'])) $this->getOwningGame()->getScheduler()->cancelTask(self::$tasks['ticker']->getTaskId());
 		unset(self::$tasks['ticker']);
 		self::$timer = 30;//TODO config
 	}
@@ -287,13 +288,17 @@ class Arena{
 		$this->getOwningGame()->stopArena($this);
 	}
 
-	/**
-	 * @param int $state
-	 */
+    /**
+     * @param int $state
+     */
 	public function setState(int $state){
 		$this->state = $state;
-		Server::getInstance()->getPluginManager()->callEvent(($ev = new UpdateSignsEvent($this->getOwningGame(), [$this->getOwningGame()->getServer()->getDefaultLevel()], $this)));
-		$ev->updateSigns();
+        $ev = new UpdateSignsEvent($this->getOwningGame(), [$this->getOwningGame()->getServer()->getDefaultLevel()], $this);
+        try {
+            $ev->call();
+            $ev->updateSigns();
+        } catch (\ReflectionException $e) {
+        }
 	}
 
 	/**
