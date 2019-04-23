@@ -1,56 +1,78 @@
 <?php
 
-/*
- *
- *  ____            _        _   __  __ _                  __  __ ____
- * |  _ \ ___   ___| | _____| |_|  \/  (_)_ __   ___      |  \/  |  _ \
- * | |_) / _ \ / __| |/ / _ \ __| |\/| | | '_ \ / _ \_____| |\/| | |_) |
- * |  __/ (_) | (__|   <  __/ |_| |  | | | | | |  __/_____| |  | |  __/
- * |_|   \___/ \___|_|\_\___|\__|_|  |_|_|_| |_|\___|     |_|  |_|_|
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * @author PocketMine Team
- * @link http://www.pocketmine.net/
- *
- *
-*/
-
 declare(strict_types=1);
 
 namespace xenialdan\gameapi\task;
 
+use pocketmine\level\Level;
 use pocketmine\scheduler\AsyncTask;
+use pocketmine\Server;
 use xenialdan\gameapi\API;
+use xenialdan\gameapi\Arena;
+use xenialdan\gameapi\Game;
 
-class ArenaAsyncCopyTask extends AsyncTask{
+class ArenaAsyncCopyTask extends AsyncTask
+{
 
-	/** @var string */
-	private $path;
-	/** @var string */
-	private $path2;
-	/** @var string */
-	private $levelname;
+    /** @var string */
+    private $path;
+    /** @var string */
+    private $path2;
+    /** @var string */
+    private $levelname;
+    /** @var string */
+    private $gamename;
 
-	/**
-	 * @param string $path
-	 * @param string $path2
-	 * @param string $levelname
-	 */
-	public function __construct(string $path, string $path2, string $levelname){
-		$this->path = $path;
-		$this->path2 = $path2;
-		$this->levelname = $levelname;
-	}
+    /**
+     * @param string $path
+     * @param string $path2
+     * @param string $levelname
+     * @param string $gamename
+     */
+    public function __construct(string $path, string $path2, string $levelname, string $gamename)
+    {
+        $this->path = $path;
+        $this->path2 = $path2;
+        $this->levelname = $levelname;
+        $this->gamename = $gamename;
+    }
 
-	public function onRun(){
-		try{
-			if(!API::copyr($this->path . "worlds/" . $this->levelname, $this->path2 . "worlds/" . $this->levelname)) throw new \Exception("Could not copy");
-		} catch (\Throwable $e){
+    public function onRun()
+    {
+        try {
+            if (!API::copyr($this->path . "worlds/" . $this->levelname, $this->path2 . "worlds/" . $this->levelname)) throw new \Exception("Could not copy");
+        } catch (\Throwable $e) {
 
-		}
-	}
+        }
+    }
+
+    public function onCompletion(Server $server)
+    {
+        if (Server::getInstance()->loadLevel($this->levelname)) {
+            Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . ' successfully reloaded!');
+
+            /*$v =$this->levelname . ".json";
+                $settings = new BedwarsSettings($v);
+                $levelname = basename($v, ".json");*/
+            /** @var Game $game */
+            $game = $server->getPluginManager()->getPlugin($this->gamename);
+            $level = Server::getInstance()->getLevelByName($this->levelname);
+            $arena = $game->getArenas()[$this->levelname];
+            #var_dump($level->getId(), $arena->getLevel()->getId(), $level === $arena->getLevel());
+            if ($arena instanceof Arena) {
+                Server::getInstance()->getLogger()->notice('Arena ' . $this->levelname . ' successfully reloaded!');
+                $arena->setLevel($level);
+                var_dump("Is Level", $arena->getLevel() instanceof Level);
+                $arena->setState(Arena::IDLE);
+                #$arena->getOwningGame()->removeArena($this->arena);
+                $arena->getOwningGame()->addArena($arena);
+            }
+        } else {
+            if (($arena = API::getArenaByLevel(null, $server->getLevelByName($this->levelname))) instanceof Arena) {
+                Server::getInstance()->broadcastMessage('Level ' . $this->levelname . ' could not be reloaded, disabling arena ' . $this->levelname . ' for the game ' . $arena->getOwningGame()->getPrefix());
+                $arena->getOwningGame()->removeArena($arena);
+            }
+            return;
+        }
+    }
 }

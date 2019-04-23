@@ -12,6 +12,7 @@ use xenialdan\gameapi\Arena;
 
 class UpdateSignsEvent extends PluginEvent{
 	public static $handlerList = null;
+    /** @var Level[] */
 	private $levels;
 	/** @var Arena */
 	private $arena;
@@ -22,51 +23,74 @@ class UpdateSignsEvent extends PluginEvent{
 	 * @param Level[] $levels
 	 * @param Arena $arena
 	 */
-	public function __construct(Plugin $plugin, $levels, Arena $arena){
+    public function __construct(Plugin $plugin, array $levels, Arena $arena)
+    {
 		parent::__construct($plugin);
 		$this->levels = $levels;
 		$this->arena = $arena;
 	}
 
-	public function updateSigns(){
-		foreach ($this->levels as $level){
-			if (!$level instanceof Level) continue;
-			foreach (array_filter($level->getTiles(), function (Tile $tile){ return $tile instanceof SignTile; }) as $tile){
-				/** @var SignTile $tile */
-				$lines = $tile->getText();
-				if (strtolower(TextFormat::clean($lines[0])) === strtolower(TextFormat::clean($this->arena->getOwningGame()->getPrefix()))){
-					if (TextFormat::clean($lines[1]) === $this->arena->getLevelName()){
-						$state = $this->arena->getState();
-						switch ($state){
-							case Arena::IDLE: {
-								$status = "Empty/Idle";
-								break;
-							}
-							case Arena::WAITING: {
-								$status = "Need players";
-								break;
-							}
-							case Arena::STARTING: {
-								$status = "Starting";
-								break;
-							}
-							case Arena::INGAME: {
-								$status = "Running";
-								break;
-							}
-							case Arena::STOP: {
-								$status = "Reloading";
-								break;
-							}
-							default: {
-								$status = "Unknown";
-							}
-						}
-						$playerline = TextFormat::AQUA . "[" . (count($this->arena->getPlayers()) === $this->arena->getMaxPlayers() ? TextFormat::RED : TextFormat::GREEN) . count($this->arena->getPlayers()) . TextFormat::AQUA . "|" . (count($this->arena->getPlayers()) === $this->arena->getMaxPlayers() ? TextFormat::RED : TextFormat::GREEN) . $this->arena->getMaxPlayers() . '-' . $this->arena->getMaxPlayers() . TextFormat::AQUA . "]";
-						$tile->setText($lines[0], $lines[1], $status, $playerline);
-					}
-				}
-			}
-		}
+    public function call(): void
+    {
+        foreach ($this->levels as $level) {
+            if (!$level instanceof Level) continue;
+            foreach (array_filter($level->getTiles(), function (Tile $tile) {
+                return $tile instanceof SignTile;
+            }) as $tile) {
+                /** @var SignTile $tile */
+                var_dump(__FILE__ . __LINE__, (string)$tile, $tile->getText());
+                $lines = $tile->getText();
+                if (strtolower(TextFormat::clean($lines[0])) === strtolower(TextFormat::clean($this->arena->getOwningGame()->getPrefix()))) {
+                    if (TextFormat::clean($lines[1]) === $this->arena->getLevelName()) {
+                        $state = $this->arena->getState();
+                        switch ($state) {
+                            case Arena::IDLE:
+                                {
+                                    $status = TextFormat::GREEN . "Empty";
+                                    break;
+                                }
+                            case Arena::WAITING:
+                                {
+                                    $status = TextFormat::GREEN . "Needs players";
+                                    break;
+                                }
+                            case Arena::STARTING:
+                                {
+                                    $status = TextFormat::GOLD . "Starting";
+                                    break;
+                                }
+                            case Arena::INGAME:
+                                {
+                                    $status = TextFormat::RED . "Running";
+                                    break;
+                                }
+                            case Arena::STOP:
+                                {
+                                    $status = TextFormat::RED . "Reloading";
+                                    break;
+                                }
+                            case Arena::SETUP:
+                                {
+                                    $status = TextFormat::DARK_RED . "Inaccessible";
+                                    break;
+                                }
+                            default:
+                                {
+                                    $status = "Unknown";
+                                }
+                        }
+                        $color = count($this->arena->getPlayers()) === $this->arena->getMaxPlayers() ? TextFormat::RED : TextFormat::GREEN;
+                        $playerline = TextFormat::AQUA . "Players: [" . $color . count($this->arena->getPlayers()) . TextFormat::AQUA . "/" . $color . $this->arena->getMaxPlayers() . TextFormat::AQUA . "]";
+                        $tile->setText(null, null, $status, $playerline);
+                    }
+                }
+            }
+        }
+        parent::call();
+    }
+
+    /** @deprecated */
+    public function updateSigns()
+    {
 	}
 }

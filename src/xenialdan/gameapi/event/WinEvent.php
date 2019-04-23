@@ -31,8 +31,8 @@ class WinEvent extends PluginEvent{
 
 	public function announce(){
 		$prefix = $this->winner instanceof Player ? "Player " : "Team ";
-		Server::getInstance()->broadcastTitle(TextFormat::GREEN . $prefix . $this->winner->getName(), TextFormat::GREEN . ' has won the game ' . $this->arena->getOwningGame()->getName() . '!', -1, -1, -1, Server::getInstance()->getDefaultLevel()->getPlayers());
-		Server::getInstance()->broadcastMessage(TextFormat::GREEN . $prefix . $this->winner->getName(). TextFormat::GREEN . ' has won the game ' . $this->arena->getOwningGame()->getName() . '!', Server::getInstance()->getDefaultLevel()->getPlayers());
+        Server::getInstance()->broadcastTitle(TextFormat::GREEN . $prefix . $this->winner->getName(), TextFormat::GREEN . ' has won the game ' . $this->arena->getOwningGame()->getPrefix() . '!', -1, -1, -1, Server::getInstance()->getDefaultLevel()->getPlayers());
+        Server::getInstance()->broadcastMessage(TextFormat::GREEN . $prefix . $this->winner->getName() . TextFormat::GREEN . ' has won the game ' . $this->arena->getOwningGame()->getPrefix() . '!', Server::getInstance()->getDefaultLevel()->getPlayers());
 	}
 
 	public function getGame(){
