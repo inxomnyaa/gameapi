@@ -325,10 +325,10 @@ class Arena
         foreach ($this->getPlayers() as $player) {
             $this->removePlayer($player);
         }
+        $this->setState(self::STOP);
         foreach ($this->getTeams() as $team) {
             $team->resetInitialPlayers();
         }
-        $this->setState(self::STOP);
         $this->getOwningGame()->stopArena($this);
     }
 
@@ -362,6 +362,9 @@ class Arena
     {
         $team = $this->getTeamByPlayer($player);
         var_dump($team);
+        if ($team instanceof Team) {
+            $team->removePlayer($player);
+        }
         $player->setSpawn(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
         Server::getInstance()->getLogger()->notice($player->getName() . ' removed');
         if ($player->isOnline()) {
@@ -377,23 +380,23 @@ class Arena
             $player->teleport(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
             $player->sendSettings();
         }
-        if ($team instanceof Team) {
-            $team->removePlayer($player);
-        }
         $aliveTeams = array_filter($this->getTeams(), function (Team $team): bool {
             return count($team->getPlayers()) > 0;
         });
         $aliveTeamsCount = count($aliveTeams);
-        if (($aliveTeamsCount === 1 && count($this->teams) > 1) || (count($this->teams) === 1 && count($team->getPlayers()) === 1)) {
-            if (count($this->teams) > 1) {
-                $winner = array_values($aliveTeams)[0];
-            } else {
-                $winner = array_values($team->getPlayers())[0];
+        if (($aliveTeamsCount === 1 && count($this->teams) > 1) || (count($this->teams) === 1 && count($team->getPlayers()) === 1) || ($this->getState() !== self::STOP && count($this->getPlayers()) === 0)) {
+            if (count($this->getPlayers()) !== 0) {
+                if (count($this->teams) > 1) {
+                    $winner = array_values($aliveTeams)[0];
+                } else {
+                    $winner = array_values($team->getPlayers())[0];
+                }
+                $ev = new WinEvent($this->getOwningGame(), $this, $winner);
+                $ev->call();
+                $ev->announce();
             }
-            $ev = new WinEvent($this->getOwningGame(), $this, $winner);
-            $ev->call();
-            $ev->announce();
-            $this->getOwningGame()->getScheduler()->scheduleDelayedTask(new class($this) extends Task
+            if ($this->getState() === self::INGAME && count($this->getPlayers()) === 0) $this->setState(self::IDLE);
+            if ($this->getState() === self::INGAME) $this->getOwningGame()->getScheduler()->scheduleDelayedTask(new class($this) extends Task
             {
                 /** @var Arena */
                 private $arena;

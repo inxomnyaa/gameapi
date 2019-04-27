@@ -196,10 +196,8 @@ class API
      */
     public static function isPlaying(Player $gamer, ?Plugin $game = null)
     {
-        if (is_null($game))
-            return !is_null(self::getTeamOfPlayer($gamer));
-        else
-            return !is_null(self::getTeamOfPlayer($gamer)) && !is_null($arena = self::getArenaByLevel($game, $gamer->getLevel())) && !is_null($arena->getTeamByPlayer($gamer));
+        return /*!is_null(self::getTeamOfPlayer($gamer)) && */
+            !is_null($arena = self::getArenaByLevel($game, $gamer->getLevel())) && $arena->inArena($gamer);
     }
 
     /**
