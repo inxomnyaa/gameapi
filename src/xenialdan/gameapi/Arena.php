@@ -11,7 +11,7 @@ use pocketmine\scheduler\Task;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use xenialdan\BossBarAPI\API as BossBarAPI;
+use xenialdan\apibossbar\DiverseBossBar;
 use xenialdan\gameapi\event\UpdateSignsEvent;
 use xenialdan\gameapi\event\WinEvent;
 use xenialdan\gameapi\task\StartTickerTask;
@@ -39,8 +39,8 @@ class Arena
     private $level = null;
     /** @var Team[] */
     private $teams;
-    /** @var int[] */
-    public $bossbarids = [];
+    /** @var DiverseBossBar */
+    public $bossbar = null;
     /** @var DefaultSettings */
     public $settings;
     public $forcedStart = false;
@@ -212,13 +212,13 @@ class Arena
             $player->teleport(Position::fromObject($this->getLevel()->getSafeSpawn()->add(0, 1), $this->getLevel()));
             Server::getInstance()->getLogger()->notice($player->getName() . ' added to ' . $teamname);
             $gamename = $this->owningGame->getPrefix();
-            if (!isset($this->bossbarids['state'])) {
-                $this->bossbarids['state'] = BossBarAPI::addBossBar([$player], $gamename . " Waiting for players..");
+            if (!isset($this->bossbar)) {
+                $this->bossbar = new DiverseBossBar();
             }
-            BossBarAPI::sendBossBarToPlayer($player, $this->bossbarids['state'], $gamename . " Waiting for players..");
+            $this->bossbar->addPlayer($player);
             if (count($this->getPlayers()) < $this->getMinPlayers()) Server::getInstance()->broadcastMessage(TextFormat::RED . TextFormat::BOLD . "The game " . $gamename . " needs players!", Server::getInstance()->getDefaultLevel()->getPlayers());
             elseif (count($this->getPlayers()) < $this->getMaxPlayers()) Server::getInstance()->broadcastMessage(TextFormat::DARK_GRAY . TextFormat::BOLD . "The game " . $gamename . " is not full, you can still join it!", Server::getInstance()->getDefaultLevel()->getPlayers());
-            BossBarAPI::setTitle($gamename . " Waiting for players.. " . count($this->getPlayers()) . '/' . $this->getMinPlayers() . '-' . $this->getMaxPlayers(), $this->bossbarids['state'], $this->getPlayers());
+            $this->bossbar->setPercentage(1)->setTitle($gamename . " Waiting for players.." . count($this->getPlayers()) . '/' . $this->getMinPlayers() . '-' . $this->getMaxPlayers());
 
             $this->setState(self::WAITING);
         } else var_dump($this->getLevelName(), "state: " . $this->state);//TODO remove debug
@@ -292,8 +292,7 @@ class Arena
             $this->resetTimer();
             return;
         }
-        BossBarAPI::setTitle('Game ' . $game->getPrefix() . ' starts in ' . $this->timer . ' seconds', $this->bossbarids['state'], $this->getPlayers());
-        BossBarAPI::setPercentage($this->timer / self::TIMER_MAX * 100, $this->bossbarids['state'], $this->getPlayers());
+        $this->bossbar->setTitle('Game ' . $game->getPrefix() . ' starts in ' . $this->timer . ' seconds')->setPercentage($this->timer / self::TIMER_MAX * 100);
         $this->timer--;
         if ($this->timer < 0) {
             $this->resetTimer();
@@ -368,7 +367,7 @@ class Arena
         $player->setSpawn(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
         Server::getInstance()->getLogger()->notice($player->getName() . ' removed');
         if ($player->isOnline()) {
-            if (isset($this->bossbarids['state'])) BossBarAPI::removeBossBar([$player], $this->bossbarids['state']);
+            if (isset($this->bossbar)) $this->bossbar->removePlayer($player);
             $player->setNameTag($player->getDisplayName());
             $player->getInventory()->clearAll();
             $player->setGamemode(Server::getInstance()->getDefaultGamemode());
