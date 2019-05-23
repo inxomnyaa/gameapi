@@ -207,9 +207,10 @@ class Arena
             $player->sendMessage(TextFormat::RED . TextFormat::BOLD . "Could not join team $teamname, Reason: This team is full");
             return false;
         }
+        $team->addPlayer($player);
         if ($this->getState() === self::WAITING || $this->getState() === self::STARTING || $this->getState() === self::IDLE) {
             var_dump(__FILE__ . __LINE__, (string)$this->getLevel()->getSafeSpawn());
-            $player->teleport(Position::fromObject($this->getLevel()->getSafeSpawn()->add(0, 1), $this->getLevel()));
+            $player->teleport(Position::fromObject($this->getLevel()->getSafeSpawn($this->getLevel()->getSpawnLocation()), $this->getLevel()));//TODO check if ->add(0, 1)
             Server::getInstance()->getLogger()->notice($player->getName() . ' added to ' . $teamname);
             $gamename = $this->owningGame->getPrefix();
             if (!isset($this->bossbar)) {
@@ -218,11 +219,10 @@ class Arena
             $this->bossbar->addPlayer($player);
             if (count($this->getPlayers()) < $this->getMinPlayers()) Server::getInstance()->broadcastMessage(TextFormat::RED . TextFormat::BOLD . "The game " . $gamename . " needs players!", Server::getInstance()->getDefaultLevel()->getPlayers());
             elseif (count($this->getPlayers()) < $this->getMaxPlayers()) Server::getInstance()->broadcastMessage(TextFormat::DARK_GRAY . TextFormat::BOLD . "The game " . $gamename . " is not full, you can still join it!", Server::getInstance()->getDefaultLevel()->getPlayers());
-            $this->bossbar->setPercentage(1)->setTitle($gamename . " Waiting for players.." . count($this->getPlayers()) . '/' . $this->getMinPlayers() . '-' . $this->getMaxPlayers());
+            $this->bossbar->setPercentage(1)->setTitle($gamename . strval($this->getMinPlayers() - count($this->getPlayers())) . " more players needed");
 
             $this->setState(self::WAITING);
-        } else var_dump($this->getLevelName(), "state: " . $this->state);//TODO remove debug
-        $team->addPlayer($player);
+        }
         $player->getInventory()->clearAll();
         $player->getArmorInventory()->clearAll();
         $player->getEnderChestInventory()->clearAll();
@@ -278,6 +278,7 @@ class Arena
     public function startTimer(Game $game)
     {
         $this->resetTimer();
+        $this->bossbar->showToAll();
         $this->setState(self::STARTING);
         self::$tasks['ticker'] = $game->getScheduler()->scheduleRepeatingTask(new StartTickerTask($game, $this), 20);
     }
@@ -292,7 +293,7 @@ class Arena
             $this->resetTimer();
             return;
         }
-        $this->bossbar->setTitle('Game ' . $game->getPrefix() . ' starts in ' . $this->timer . ' seconds')->setPercentage($this->timer / self::TIMER_MAX * 100);
+        $this->bossbar->setTitle('Game ' . str_replace('[', '', str_replace(']', '', $game->getPrefix())) . ' starts in ' . $this->timer . ' seconds')->setPercentage($this->timer / self::TIMER_MAX);
         $this->timer--;
         if ($this->timer < 0) {
             $this->resetTimer();
@@ -302,6 +303,7 @@ class Arena
 
     public function resetTimer()
     {
+        $this->bossbar->hideFromAll();
         $this->forcedStart = false;
         $this->setState(self::WAITING);
         if (isset(self::$tasks['ticker'])) $this->getOwningGame()->getScheduler()->cancelTask(self::$tasks['ticker']->getTaskId());

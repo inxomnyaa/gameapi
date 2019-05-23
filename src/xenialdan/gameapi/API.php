@@ -2,6 +2,7 @@
 
 namespace xenialdan\gameapi;
 
+use pocketmine\entity\Entity;
 use pocketmine\item\Item;
 use pocketmine\level\format\io\LevelProvider;
 use pocketmine\level\format\io\LevelProviderManager;
@@ -106,9 +107,12 @@ class API
         if ($arena->getState() !== Arena::STOP) $arena->stopArena();
 
         if ($server->isLevelLoaded($levelname)) {
-            foreach ($level->getEntities() as $entity) {
-                $level->removeEntity($entity);
-            }
+            if (method_exists($arena->getOwningGame(), "removeEntityOnReset"))
+                foreach (array_filter($level->getEntities(), function (Entity $entity) use ($arena) {
+                    return $arena->getOwningGame()->removeEntityOnReset($entity);
+                }) as $entity) {
+                    $level->removeEntity($entity);
+                }
             $server->getLogger()->notice('Level ' . $levelname . ($server->unloadLevel($server->getLevelByName($levelname)) ? ' successfully' : ' NOT') . ' unloaded!');
             $path1 = $arena->getOwningGame()->getDataFolder();
 

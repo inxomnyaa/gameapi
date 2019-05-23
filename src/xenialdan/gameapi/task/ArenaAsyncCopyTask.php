@@ -50,21 +50,15 @@ class ArenaAsyncCopyTask extends AsyncTask
     {
         if (Server::getInstance()->loadLevel($this->levelname)) {
             Server::getInstance()->getLogger()->notice('Level ' . $this->levelname . ' successfully reloaded!');
-
-            /*$v =$this->levelname . ".json";
-                $settings = new BedwarsSettings($v);
-                $levelname = basename($v, ".json");*/
             /** @var Game $game */
             $game = $server->getPluginManager()->getPlugin($this->gamename);
             $level = Server::getInstance()->getLevelByName($this->levelname);
-            $arena = $game->getArenas()[$this->levelname];
-            #var_dump($level->getId(), $arena->getLevel()->getId(), $level === $arena->getLevel());
+            $arena = $game->getArenas()[$this->levelname];//TODO set variables of arena back to default
             if ($arena instanceof Arena) {
                 Server::getInstance()->getLogger()->notice('Arena ' . $this->levelname . ' successfully reloaded!');
                 $arena->setLevel($level);
                 var_dump("Is Level", $arena->getLevel() instanceof Level);
                 $arena->setState(Arena::IDLE);
-                #$arena->getOwningGame()->removeArena($this->arena);
                 $arena->getOwningGame()->addArena($arena);
             }
         } else {

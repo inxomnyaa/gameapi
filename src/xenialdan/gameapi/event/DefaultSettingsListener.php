@@ -273,37 +273,39 @@ class DefaultSettingsListener implements Listener
      */
     public function noEntityDamage(EntityDamageEvent $e)
     {
-        if (!$e->getEntity()->isValid() || is_null($level = $e->getEntity()->getLevel())) return;
+        if (!$e->getEntity()->isValid()) return;
+        $level = $e->getEntity()->getLevel();
         if (!API::isArena($level)) return;
         $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
         if ($arena->getState() === Arena::SETUP) return;
         if ($arena->getState() !== Arena::INGAME) {
             $e->setCancelled();
+            return;
         }
         if (!$settings instanceof DefaultSettings) return;
-        if ($e->getCause() === EntityDamageEvent::CAUSE_ENTITY_ATTACK) {
+        $cause = $e->getCause();
+        if ($cause === EntityDamageEvent::CAUSE_ENTITY_ATTACK) {
             /** @var EntityDamageByEntityEvent $e */
-            if ($settings->noDamageEntities && !$e->getEntity() instanceof Player) $e->setCancelled();
-            if ($settings->noDamageEnemies && ($self = $e->getEntity() instanceof Player)) {
-                if (API::getTeamOfPlayer($self) !== API::getTeamOfPlayer($e->getDamager()))
+            $self = $e->getEntity();
+            $damager = $e->getDamager();
+            if ($self instanceof Player && $damager instanceof Player) {
+                $inTeam = API::getTeamOfPlayer($self)->inTeam($damager);
+                if ($inTeam && $settings->noDamageTeam || !$inTeam && $settings->noDamageEnemies) {
                     $e->setCancelled();
-            }
-            if ($settings->noDamageTeam && ($self = $e->getEntity()) instanceof Player) {
-                if (API::getTeamOfPlayer($self)->inTeam($e->getDamager()))
-                    $e->setCancelled();
-            }
-        } elseif (($e->getCause() === EntityDamageEvent::CAUSE_FIRE ||
-                $e->getCause() === EntityDamageEvent::CAUSE_LAVA ||
-                $e->getCause() === EntityDamageEvent::CAUSE_CONTACT ||
-                $e->getCause() === EntityDamageEvent::CAUSE_FIRE_TICK ||
-                $e->getCause() === EntityDamageEvent::CAUSE_SUFFOCATION) &&
+                }
+            } elseif ($self instanceof Player && !$damager instanceof Player && $settings->noDamageEntities) $e->setCancelled();
+        } elseif (($cause === EntityDamageEvent::CAUSE_FIRE ||
+                $cause === EntityDamageEvent::CAUSE_LAVA ||
+                $cause === EntityDamageEvent::CAUSE_CONTACT ||
+                $cause === EntityDamageEvent::CAUSE_FIRE_TICK ||
+                $cause === EntityDamageEvent::CAUSE_SUFFOCATION) &&
             $settings->noEnvironmentDamage) {
             $e->setCancelled();
-        } elseif (($e->getCause() === EntityDamageEvent::CAUSE_FALL) && $settings->noFallDamage) {
+        } elseif (($cause === EntityDamageEvent::CAUSE_FALL) && $settings->noFallDamage) {
             $e->setCancelled();
-        } elseif (($e->getCause() === EntityDamageEvent::CAUSE_BLOCK_EXPLOSION || $e->getCause() === EntityDamageEvent::CAUSE_ENTITY_EXPLOSION) && $settings->noExplosionDamage) {
+        } elseif (($cause === EntityDamageEvent::CAUSE_BLOCK_EXPLOSION || $cause === EntityDamageEvent::CAUSE_ENTITY_EXPLOSION) && $settings->noExplosionDamage) {
             $e->setCancelled();
-        } elseif (($e->getCause() === EntityDamageEvent::CAUSE_DROWNING) && $settings->noDrowningDamage) {
+        } elseif (($cause === EntityDamageEvent::CAUSE_DROWNING) && $settings->noDrowningDamage) {
             $e->setCancelled();
         }
     }

@@ -2,6 +2,7 @@
 
 namespace xenialdan\gameapi;
 
+use pocketmine\entity\Entity;
 use pocketmine\Player;
 
 interface Game
@@ -75,4 +76,12 @@ interface Game
      * @param Player $player
      */
     public function onPlayerJoinGame(Player $player): void;
+
+    /**
+     * Callback function for array_filter
+     * If return value is true, this entity will be deleted.
+     * @param Entity $entity
+     * @return bool
+     */
+    public function removeEntityOnReset(Entity $entity): bool;
 }
