@@ -1,5 +1,5 @@
 name: gameapi
-version: 4.0.0
+version: 4.0.1
 antigen: xenialdan\gameapi
 api: [3.0.0, 4.0.0]
 php: [7.2]

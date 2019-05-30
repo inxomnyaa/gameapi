@@ -22,6 +22,13 @@ abstract class Game extends PluginBase
     }
 
     /**
+     * Create and return a new arena, used for addArena in onLoad, setupArena and resetArena (in @see ArenaAsyncCopyTask)
+     * @param string $settingsPath The path to the .json file used for the settings. Basename should be levelname
+     * @return Arena
+     */
+    public abstract function getNewArena(string $settingsPath): Arena;
+
+    /**
      * Returns all arenas
      * @return Arena[]
      */
@@ -70,7 +77,17 @@ abstract class Game extends PluginBase
      * Stops the setup and teleports the player back to the default level
      * @param Player $player
      */
-    public abstract function endSetupArena(Player $player): void;
+    public function endSetupArena(Player $player): void
+    {
+        $arena = API::getArenaByLevel($this, $player->getLevel());
+        $arena->getSettings()->save();
+        $arena->setState(Arena::IDLE);
+        $player->getInventory()->clearAll();
+        $player->setAllowFlight(false);
+        $player->setFlying(false);
+        $player->setGamemode($player->getServer()->getDefaultGamemode());
+        $player->teleport($player->getServer()->getDefaultLevel()->getSpawnLocation());
+    }
 
     /**
      * The names of the authors
@@ -105,4 +122,32 @@ abstract class Game extends PluginBase
      * @return bool
      */
     public abstract function removeEntityOnArenaReset(Entity $entity): bool;
+
+    /**
+     * @return Player[]
+     */
+    public function getPlayers()
+    {
+        $players = [];
+        foreach ($this->getArenas() as $arena) {
+            $players = array_merge($players, $arena->getPlayers());
+        }
+        return $players;
+    }
+
+    public function onDisable()
+    {
+        try {
+            API::stop($this);
+        } catch (\ReflectionException $e) {
+        }
+    }
+
+    public function getArenaByLevelName(string $worldname): ?Arena
+    {
+        foreach ($this->getArenas() as $arena) {
+            if ($arena->getLevelName() === $worldname) return $arena;
+        }
+        return null;
+    }
 }

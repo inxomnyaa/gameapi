@@ -53,13 +53,13 @@ class ArenaAsyncCopyTask extends AsyncTask
             /** @var Game $game */
             $game = $server->getPluginManager()->getPlugin($this->gamename);
             $level = Server::getInstance()->getLevelByName($this->levelname);
-            $arena = $game->getArenas()[$this->levelname];//TODO set variables of arena back to default
+            $arena = $game->getNewArena($game->getDataFolder() . $this->levelname . ".json");
             if ($arena instanceof Arena) {
                 Server::getInstance()->getLogger()->notice('Arena ' . $this->levelname . ' successfully reloaded!');
                 $arena->setLevel($level);
                 var_dump("Is Level", $arena->getLevel() instanceof Level);
                 $arena->setState(Arena::IDLE);
-                $arena->getOwningGame()->addArena($arena);
+                $game->addArena($arena);
             }
         } else {
             if (($arena = API::getArenaByLevel(null, $server->getLevelByName($this->levelname))) instanceof Arena) {
