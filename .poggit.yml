@@ -6,4 +6,7 @@ projects:
     path: ""
     model: virion
     type: library
+    libs:
+    - src: thebigsmilexd/apibossbar/apibossbar
+      version: ^0.0.2
 ...
