@@ -2,9 +2,11 @@
 
 namespace xenialdan\gameapi;
 
+use pocketmine\entity\Attribute;
 use pocketmine\level\generator\GeneratorManager;
 use pocketmine\level\Level;
 use pocketmine\level\Position;
+use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\scheduler\Task;
@@ -14,6 +16,8 @@ use pocketmine\utils\TextFormat;
 use xenialdan\apibossbar\DiverseBossBar;
 use xenialdan\gameapi\event\UpdateSignsEvent;
 use xenialdan\gameapi\event\WinEvent;
+use xenialdan\gameapi\gamerule\BoolGameRule;
+use xenialdan\gameapi\gamerule\GameRuleList;
 use xenialdan\gameapi\task\StartTickerTask;
 
 define('DS', DIRECTORY_SEPARATOR);
@@ -219,7 +223,7 @@ class Arena
             $this->bossbar->addPlayer($player);
             if (count($this->getPlayers()) < $this->getMinPlayers()) Server::getInstance()->broadcastMessage(TextFormat::RED . TextFormat::BOLD . "The game " . $gamename . " needs players!", Server::getInstance()->getDefaultLevel()->getPlayers());
             elseif (count($this->getPlayers()) < $this->getMaxPlayers()) Server::getInstance()->broadcastMessage(TextFormat::DARK_GRAY . TextFormat::BOLD . "The game " . $gamename . " is not full, you can still join it!", Server::getInstance()->getDefaultLevel()->getPlayers());
-            $this->bossbar->setPercentage(1)->setTitle($gamename . strval($this->getMinPlayers() - count($this->getPlayers())) . " more players needed");
+            $this->bossbar->setPercentage(1)->setTitle($gamename . " " . strval($this->getMinPlayers() - count($this->getPlayers())) . " more players needed");
 
             $this->setState(self::WAITING);
         }
@@ -313,9 +317,34 @@ class Arena
 
     public function startArena()
     {
+        $this->getLevel()->setTime($this->getSettings()->time);
+        if ($this->getSettings()->stopTime) {
+            $this->getLevel()->stopTime();
+            $pk = new GameRulesChangedPacket();
+            $gamerulelist = new GameRuleList();
+            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, false));
+            $pk->gameRules = $gamerulelist->getRules();
+            $this->getLevel()->broadcastGlobalPacket($pk);
+        } else {
+            $this->getLevel()->startTime();
+            $pk = new GameRulesChangedPacket();
+            $gamerulelist = new GameRuleList();
+            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, true));
+            $pk->gameRules = $gamerulelist->getRules();
+            $this->getLevel()->broadcastGlobalPacket($pk);
+        }
         foreach ($this->getTeams() as $team) {
             $team->resetInitialPlayers();
             $team->updateInitialPlayers();
+            foreach ($team->getPlayers() as $player) {
+                $player->setHealth($player->getMaxHealth());
+                $player->setFood($player->getMaxFood());
+                $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
+                $player->getInventory()->clearAll();
+                $player->getArmorInventory()->clearAll();
+                $player->getEnderChestInventory()->clearAll();
+                $player->getCursorInventory()->clearAll();
+            }
         }
         $this->setState(self::INGAME);
         $this->getOwningGame()->startArena($this);
