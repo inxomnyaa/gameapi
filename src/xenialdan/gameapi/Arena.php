@@ -322,14 +322,14 @@ class Arena
             $this->getLevel()->stopTime();
             $pk = new GameRulesChangedPacket();
             $gamerulelist = new GameRuleList();
-            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, false));
+            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, !$this->getSettings()->stopTime));
             $pk->gameRules = $gamerulelist->getRules();
             $this->getLevel()->broadcastGlobalPacket($pk);
         } else {
             $this->getLevel()->startTime();
             $pk = new GameRulesChangedPacket();
             $gamerulelist = new GameRuleList();
-            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, true));
+            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, !$this->getSettings()->stopTime));
             $pk->gameRules = $gamerulelist->getRules();
             $this->getLevel()->broadcastGlobalPacket($pk);
         }
