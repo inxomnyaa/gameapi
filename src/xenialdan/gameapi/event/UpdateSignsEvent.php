@@ -38,7 +38,6 @@ class UpdateSignsEvent extends PluginEvent{
                 return $tile instanceof SignTile;
             }) as $tile) {
                 /** @var SignTile $tile */
-                var_dump(__FILE__ . __LINE__, (string)$tile, $tile->getText());
                 $lines = $tile->getText();
                 if (strtolower(TextFormat::clean($lines[0])) === strtolower(TextFormat::clean($this->arena->getOwningGame()->getPrefix()))) {
                     if (TextFormat::clean($lines[1]) === $this->arena->getLevelName()) {
@@ -88,9 +87,4 @@ class UpdateSignsEvent extends PluginEvent{
         }
         parent::call();
     }
-
-    /** @deprecated */
-    public function updateSigns()
-    {
-	}
 }

@@ -71,6 +71,8 @@ class DefaultSettings extends Config
     public $noDrowningDamage = false;
     /** @var bool $noInventoryEditing Default false - Stop inventory editing */
     public $noInventoryEditing = false;
+    /** @var bool $allowFlight Default false - Allow flying */
+    public $allowFlight = false;
     /** @var array $breakBlockIds Default [] - Breakable blocks. WILL OVERRIDE $noBreak and $immutableWorld */
     public $breakBlockIds = [];
     /** @var array $placeBlockIds Default [] - Placeable blocks. WILL OVERRIDE $noPlace and $immutableWorld */

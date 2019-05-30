@@ -8,7 +8,6 @@ use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\Player;
-use pocketmine\plugin\Plugin;
 use pocketmine\scheduler\Task;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
@@ -32,7 +31,7 @@ class Arena
     const SETUP = 5;
 
     const TIMER_MAX = 30;
-    /** @var Game|Plugin */
+    /** @var Game */
     private $owningGame;
     /** @var int */
     private $timer;
@@ -52,11 +51,11 @@ class Arena
     /**
      * Arena constructor.
      * @param string $levelName
-     * @param Plugin $game
+     * @param Game $game
      * @param DefaultSettings|null $settings
      */
 
-    public function __construct(string $levelName, Plugin $game, DefaultSettings $settings = null)
+    public function __construct(string $levelName, Game $game, DefaultSettings $settings = null)
     {
         $this->owningGame = $game;
         $this->levelName = $levelName;
@@ -80,7 +79,7 @@ class Arena
     }
 
     /**
-     * @return Plugin|Game
+     * @return Game
      */
     public function getOwningGame(): Game
     {
@@ -226,14 +225,11 @@ class Arena
             $this->bossbar->setPercentage(1)->setTitle($gamename . " " . strval($this->getMinPlayers() - count($this->getPlayers())) . " more players needed");
 
             $this->setState(self::WAITING);
+            $player->setGamemode(Player::ADVENTURE);
         }
-        $player->getInventory()->clearAll();
-        $player->getArmorInventory()->clearAll();
-        $player->getEnderChestInventory()->clearAll();
-        $player->getCursorInventory()->clearAll();
-        $this->owningGame->onPlayerJoinGame($player);
+        $this->resetPlayer($player);
+        $this->owningGame->onPlayerJoinTeam($player);
         $player->sendMessage($team->getColor() . TextFormat::BOLD . "You joined the team " . $team->getName());
-        $player->setGamemode(Player::ADVENTURE);
         if (($this->getState() === self::WAITING || $this->getState() === self::IDLE || $this->getState() === self::STARTING) && count($this->getPlayers()) >= $this->getMinPlayers()) {
             $this->setState(self::STARTING);
             if (isset(self::$tasks['ticker'])) $this->resetTimer();
@@ -277,7 +273,7 @@ class Arena
     }
 
     /**
-     * @param Plugin|Game $game
+     * @param Game $game
      */
     public function startTimer(Game $game)
     {
@@ -288,7 +284,7 @@ class Arena
     }
 
     /**
-     * @param Plugin|Game $game
+     * @param Game $game
      */
     public function sendTimer(Game $game)
     {
@@ -337,13 +333,7 @@ class Arena
             $team->resetInitialPlayers();
             $team->updateInitialPlayers();
             foreach ($team->getPlayers() as $player) {
-                $player->setHealth($player->getMaxHealth());
-                $player->setFood($player->getMaxFood());
-                $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
-                $player->getInventory()->clearAll();
-                $player->getArmorInventory()->clearAll();
-                $player->getEnderChestInventory()->clearAll();
-                $player->getCursorInventory()->clearAll();
+                $this->resetPlayer($player);
             }
         }
         $this->setState(self::INGAME);
@@ -385,6 +375,27 @@ class Arena
     }
 
     /**
+     * Sets food, health and saturation to default value, clears inventories
+     * @param Player $player
+     */
+    private function resetPlayer(Player $player)
+    {
+        $player->setNameTag($player->getDisplayName());
+        $player->setHealth($player->getMaxHealth());
+        $player->setFood($player->getMaxFood());
+        $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
+        $player->getInventory()->clearAll();
+        $player->getArmorInventory()->clearAll();
+        $player->getEnderChestInventory()->clearAll();
+        $player->getCursorInventory()->clearAll();
+        $player->setGamemode($this->settings->gamemode);
+        $player->setAllowFlight($this->settings->allowFlight);
+        $player->removeAllEffects();
+        $player->setDataFlag(Player::DATA_FLAGS, Player::DATA_FLAG_IMMOBILE, false);
+        $player->sendSettings();
+    }
+
+    /**
      * @param Player $player
      * @throws \ReflectionException
      */
@@ -399,14 +410,8 @@ class Arena
         Server::getInstance()->getLogger()->notice($player->getName() . ' removed');
         if ($player->isOnline()) {
             if (isset($this->bossbar)) $this->bossbar->removePlayer($player);
-            $player->setNameTag($player->getDisplayName());
-            $player->getInventory()->clearAll();
+            $this->resetPlayer($player);
             $player->setGamemode(Server::getInstance()->getDefaultGamemode());
-            $player->setHealth($player->getMaxHealth());
-            $player->setFood($player->getMaxFood());
-            $player->removeAllEffects();
-            $player->setAllowFlight(false);
-            $player->setDataFlag(Player::DATA_FLAGS, Player::DATA_FLAG_IMMOBILE, false);
             $player->teleport(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
             $player->sendSettings();
         }

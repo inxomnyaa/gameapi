@@ -4,78 +4,99 @@ namespace xenialdan\gameapi;
 
 use pocketmine\entity\Entity;
 use pocketmine\Player;
+use pocketmine\plugin\PluginBase;
 
-interface Game
+abstract class Game extends PluginBase
 {
-
-    /**
-     * The name of the game, lowercase
-     * @return string;
-     */
-    public function getName(): string;
+    /** @var Arena[] */
+    private static $arenas = [];
 
     /**
      * The prefix of the game
      * Used for messages and signs
-     * @return string;
+     * @return string
      */
-    public function getPrefix(): string;
+    public function getPrefix(): string
+    {
+        return $this->getDescription()->getPrefix();
+    }
 
     /**
-     * TODO: check if this should be in a minigame, instead of loader
      * Returns all arenas
      * @return Arena[]
      */
-    public function getArenas(): array;
+    public function getArenas(): array
+    {
+        return self::$arenas;
+    }
 
     /**
-     * TODO: check if this should be in a minigame, instead of loader
      * Adds an arena
      * @param Arena $arena
      */
-    public function addArena(Arena $arena): void;
+    public function addArena(Arena $arena): void
+    {
+        self::$arenas[$arena->getLevelName()] = $arena;
+    }
 
     /**
-     * TODO: check if this should be in a minigame, instead of loader
      * Removes an arena
      * @param Arena $arena
      */
-    public function removeArena(Arena $arena): void;
+    public function removeArena(Arena $arena): void
+    {
+        unset(self::$arenas[$arena->getLevelName()]);
+    }
+
+    /**
+     * Stops, removes and deletes the arena config
+     * @param Arena $arena
+     * @return bool
+     */
+    public function deleteArena(Arena $arena): bool
+    {
+        $arena->stopArena();
+        $this->removeArena($arena);
+        return unlink($this->getDataFolder() . $arena->getLevelName() . ".json");
+    }
 
     /**
      * A method for setting up an arena.
      * @param Player $player The player who will run the setup
      */
-    public function setupArena(Player $player): void;
+    public abstract function setupArena(Player $player): void;
 
     /**
      * Stops the setup and teleports the player back to the default level
      * @param Player $player
      */
-    public function endSetupArena(Player $player): void;
+    public abstract function endSetupArena(Player $player): void;
 
     /**
      * The names of the authors
      * @return string;
      */
-    public function getAuthors(): string;
+    public function getAuthors(): string
+    {
+        return implode(", ", $this->getDescription()->getAuthors());
+    }
 
     /**
      * @param Arena $arena
      */
-    public function startArena(Arena $arena): void;
+    public abstract function startArena(Arena $arena): void;
 
     /**
-     * TODO use this
+     * Called AFTER API::stopArena, do NOT use $arena->stopArena() in this function - will result in an recursive call
      * @param Arena $arena
      */
-    public function stopArena(Arena $arena): void;
+    public abstract function stopArena(Arena $arena): void;
 
     /**
-     * Called right when a player joins a game in an arena. Used to set up players
+     * Called right when a player joins a team in an arena of this game. Used to set up players
      * @param Player $player
      */
-    public function onPlayerJoinGame(Player $player): void;
+    public abstract function onPlayerJoinTeam(Player $player): void;
 
     /**
      * Callback function for array_filter
@@ -83,5 +104,5 @@ interface Game
      * @param Entity $entity
      * @return bool
      */
-    public function removeEntityOnReset(Entity $entity): bool;
+    public abstract function removeEntityOnArenaReset(Entity $entity): bool;
 }
