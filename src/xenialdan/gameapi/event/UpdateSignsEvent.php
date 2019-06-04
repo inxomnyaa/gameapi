@@ -4,35 +4,39 @@ namespace xenialdan\gameapi\event;
 
 use pocketmine\event\plugin\PluginEvent;
 use pocketmine\level\Level;
-use pocketmine\plugin\Plugin;
 use pocketmine\tile\Sign as SignTile;
 use pocketmine\tile\Tile;
 use pocketmine\utils\TextFormat;
+use xenialdan\gameapi\API;
 use xenialdan\gameapi\Arena;
+use xenialdan\gameapi\Game;
 
-class UpdateSignsEvent extends PluginEvent{
-	public static $handlerList = null;
+class UpdateSignsEvent extends PluginEvent
+{
+    public static $handlerList = null;
     /** @var Level[] */
-	private $levels;
-	/** @var Arena */
-	private $arena;
+    private $levels;
+    /** @var Arena */
+    private $arena;
 
-	/**
-	 * UpdateSignsEvent constructor.
-	 * @param Plugin $plugin
-	 * @param Level[] $levels
-	 * @param Arena $arena
-	 */
-    public function __construct(Plugin $plugin, array $levels, Arena $arena)
+    /**
+     * UpdateSignsEvent constructor.
+     * @param Game $plugin
+     * @param Level[] $levels
+     * @param Arena $arena
+     */
+    public function __construct(Game $plugin, array $levels, Arena $arena)
     {
-		parent::__construct($plugin);
-		$this->levels = $levels;
-		$this->arena = $arena;
-	}
+        parent::__construct($plugin);
+        $this->levels = $levels;
+        $this->arena = $arena;
+    }
 
     public function call(): void
     {
-        foreach ($this->levels as $level) {
+        foreach (array_filter($this->levels, function (Level $level) {
+            return !API::isArena($level);
+        }) as $level) {
             if (!$level instanceof Level) continue;
             foreach (array_filter($level->getTiles(), function (Tile $tile) {
                 return $tile instanceof SignTile;

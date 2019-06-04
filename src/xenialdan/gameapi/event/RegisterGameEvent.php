@@ -9,7 +9,7 @@ use xenialdan\gameapi\Game;
 class RegisterGameEvent extends PluginEvent{
 	public static $handlerList = null;
 
-    public function __construct(Plugin $plugin)
+    public function __construct(Game $plugin)
     {
 		parent::__construct($plugin);
 	}
@@ -24,4 +24,10 @@ class RegisterGameEvent extends PluginEvent{
 	public function getName(){
 		return $this->getGame()->getName();
 	}
+
+    public function call(): void
+    {
+        $this->getGame()->getServer()->getLogger()->notice('Registered game ' . $this->getName() . ' by ' . $this->getGame()->getAuthors());
+        parent::call();
+    }
 }

@@ -6,7 +6,6 @@ use pocketmine\entity\Entity;
 use pocketmine\item\Item;
 use pocketmine\level\format\io\LevelProvider;
 use pocketmine\level\format\io\LevelProviderManager;
-use pocketmine\level\generator\GeneratorManager;
 use pocketmine\level\Level;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\Player;
@@ -15,6 +14,7 @@ use pocketmine\Server;
 use pocketmine\utils\Color;
 use pocketmine\utils\TextFormat;
 use xenialdan\gameapi\commands\GamesCommand;
+use xenialdan\gameapi\commands\GameStatusCommand;
 use xenialdan\gameapi\event\DefaultSettingsListener;
 use xenialdan\gameapi\event\RegisterGameEvent;
 use xenialdan\gameapi\event\StopGameEvent;
@@ -24,6 +24,8 @@ class API
 {
     /** @var Game[] */
     private static $games;
+    /** @var GeneratorGameVoid */
+    public static $generator;
 
     /**
      * Returns all world names (!NOT FOLDER NAMES, level.dat entries) of valid levels in "/worlds"
@@ -109,7 +111,7 @@ class API
         if ($server->isLevelLoaded($levelname)) {
             if (method_exists($arena->getOwningGame(), "removeEntityOnReset"))
                 foreach (array_filter($level->getEntities(), function (Entity $entity) use ($arena) {
-                    return $arena->getOwningGame()->removeEntityOnReset($entity);
+                    return $arena->getOwningGame()->removeEntityOnArenaReset($entity);
                 }) as $entity) {
                     $level->removeEntity($entity);
                 }
@@ -214,17 +216,18 @@ class API
         //game command
         if ($game->getServer()->getCommandMap()->register("gameapi", new GamesCommand()))
             $game->getServer()->getLogger()->notice('Registered /games command');
+        if ($game->getServer()->getCommandMap()->register("gameapi", new GameStatusCommand()))
+            $game->getServer()->getLogger()->notice('Registered /gamestatus command');
         //Generic handler for the DefaultSettings
         if (!DefaultSettingsListener::isRegistered())
             DefaultSettingsListener::register($game);
         try {
-            GeneratorManager::addGenerator(GeneratorGameVoid::class, "game_void");
+            self::$generator = new GeneratorGameVoid();
         } catch (\InvalidArgumentException $e) {
         };
         self::$games[$game->getName()] = $game;
         $ev = new RegisterGameEvent($game);
         $ev->call();
-        $game->getServer()->getLogger()->notice('Registered game ' . $ev->getName() . ' by ' . $ev->getGame()->getAuthors());
     }
 
     /**

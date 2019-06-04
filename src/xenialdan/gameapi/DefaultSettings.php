@@ -77,6 +77,8 @@ class DefaultSettings extends Config
     public $breakBlockIds = [];
     /** @var array $placeBlockIds Default [] - Placeable blocks. WILL OVERRIDE $noPlace and $immutableWorld */
     public $placeBlockIds = [];
+    /** @var array containing team spawns, color and name */
+    public $teams = [];
 
     public function __construct(string $path)
     {

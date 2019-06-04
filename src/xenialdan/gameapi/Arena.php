@@ -3,7 +3,6 @@
 namespace xenialdan\gameapi;
 
 use pocketmine\entity\Attribute;
-use pocketmine\level\generator\GeneratorManager;
 use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
@@ -41,7 +40,7 @@ class Arena
     private $levelName;
     private $level = null;
     /** @var Team[] */
-    private $teams;
+    private $teams = [];
     /** @var DiverseBossBar */
     public $bossbar = null;
     /** @var DefaultSettings */
@@ -60,7 +59,7 @@ class Arena
         $this->owningGame = $game;
         $this->levelName = $levelName;
         try {
-            Server::getInstance()->generateLevel($levelName, null, GeneratorManager::getGenerator('game_void'));
+            API::$generator->generateLevel($levelName);
             //reset world
             $path1 = $this->owningGame->getDataFolder() . "worlds" . DS;
             @mkdir($path1);
@@ -194,6 +193,7 @@ class Arena
         if (!is_null(($oldteam = $this->getTeamByPlayer($player)))) {
             $oldteam->removePlayer($player);
         }
+        $team = $this->getTeamByName($teamname);
         if (empty($teamname)) {
             /** @var Team $team */
             $count = [];
@@ -202,11 +202,12 @@ class Arena
                     $count[$team->getName()] = count($team->getPlayers());
             }
             if (!empty($count)) $team = $this->getTeamByName($teamname = array_keys($count, min($count))[0]);
-        } elseif (!($team = $this->getTeamByName($teamname)) instanceof Team) {
+        }
+        if (!$team instanceof Team) {
             $player->sendMessage(TextFormat::RED . TextFormat::BOLD . "Could not join team $teamname, Reason: A team with this name does not exist");
             return false;
         }
-        if (is_null($team) || count($team->getPlayers()) >= $team->getMaxPlayers()) {
+        if (count($team->getPlayers()) >= $team->getMaxPlayers()) {
             $player->sendMessage(TextFormat::RED . TextFormat::BOLD . "Could not join team $teamname, Reason: This team is full");
             return false;
         }
@@ -378,7 +379,7 @@ class Arena
      * Sets food, health and saturation to default value, clears inventories
      * @param Player $player
      */
-    private function resetPlayer(Player $player)
+    public function resetPlayer(Player $player)
     {
         $player->setNameTag($player->getDisplayName());
         $player->setHealth($player->getMaxHealth());
