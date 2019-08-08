@@ -8,5 +8,5 @@ projects:
     type: library
     libs:
     - src: thebigsmilexd/apibossbar/apibossbar
-      version: ^0.0.2
+      version: ^0.0.3
 ...

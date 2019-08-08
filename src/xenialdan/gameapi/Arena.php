@@ -344,7 +344,10 @@ class Arena
     public function stopArena()
     {
         foreach ($this->getPlayers() as $player) {
-            $this->removePlayer($player);
+            try {
+                $this->removePlayer($player);
+            } catch (\ReflectionException $e) {
+            }
         }
         $this->setState(self::STOP);
         foreach ($this->getTeams() as $team) {
