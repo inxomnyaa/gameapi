@@ -18,8 +18,6 @@ use xenialdan\gameapi\gamerule\BoolGameRule;
 use xenialdan\gameapi\gamerule\GameRuleList;
 use xenialdan\gameapi\task\StartTickerTask;
 
-define('DS', DIRECTORY_SEPARATOR);
-
 class Arena
 {
     const IDLE = 0;
@@ -61,10 +59,10 @@ class Arena
         try {
             API::$generator->generateLevel($levelName);
             //reset world
-            $path1 = $this->owningGame->getDataFolder() . "worlds" . DS;
+            $path1 = $this->owningGame->getDataFolder() . "worlds" . DIRECTORY_SEPARATOR;
             @mkdir($path1);
 
-            if (!API::copyr($this->owningGame->getServer()->getDataPath() . "worlds" . DS . $levelName, $path1 . $levelName)) {
+            if (!API::copyr($this->owningGame->getServer()->getDataPath() . "worlds" . DIRECTORY_SEPARATOR . $levelName, $path1 . $levelName)) {
                 throw new MiniGameException('Could not copy level to plugin..');
             }
             Server::getInstance()->loadLevel($levelName);
