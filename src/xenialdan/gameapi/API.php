@@ -321,9 +321,9 @@ class API
     }
 
     /**
-     * Returns a fitting meta for a team color
+     * Returns a matching meta value for a TextFormat color constant
      * @param string $color a TextFormat constant
-     * @return int $meta
+     * @return int Meta value, returns -1 if failed
      */
     public static function getMetaByColor(string $color)
     {
@@ -364,7 +364,7 @@ class API
     }
 
     /**
-     * Returns a fitting meta for a team color
+     * Returns a matching TextFormat color constant from meta values
      * @param int $meta
      * @return string $color a TextFormat constant
      */
