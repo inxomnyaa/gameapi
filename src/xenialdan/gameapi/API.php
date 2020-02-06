@@ -13,6 +13,7 @@ use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 use pocketmine\utils\Color;
 use pocketmine\utils\TextFormat;
+use RuntimeException;
 use xenialdan\gameapi\commands\GamesCommand;
 use xenialdan\gameapi\commands\GameStatusCommand;
 use xenialdan\gameapi\event\DefaultSettingsListener;
@@ -30,19 +31,25 @@ class API
     /**
      * Returns all world names (!NOT FOLDER NAMES, level.dat entries) of valid levels in "/worlds"
      * @return string[]
+     * @throws RuntimeException
      */
     public static function getAllWorlds(): array
     {
         $worldNames = [];
         $glob = glob(Server::getInstance()->getDataPath() . "worlds/*", GLOB_ONLYDIR);
         if ($glob === false) return $worldNames;
+        //hack to fix "File in use" with leveldb. TODO find proper replacement
+        return array_map(function ($path) {
+            return basename($path);
+        }, $glob);
         foreach ($glob as $path) {
             $path .= DIRECTORY_SEPARATOR;
             $provider = LevelProviderManager::getProvider($path);
-            if ($provider !== \null) {
+            if ($provider !== null) {
                 /** @var LevelProvider $c */
                 $c = (new $provider($path));
                 $worldNames[] = $c->getName();
+                unset($provider);
             }
         }
         sort($worldNames);
