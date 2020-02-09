@@ -37,13 +37,17 @@ class API
     {
         $worldNames = [];
         $glob = glob(Server::getInstance()->getDataPath() . "worlds/*", GLOB_ONLYDIR);
-        if ($glob === false) return $worldNames;
-        //hack to fix "File in use" with leveldb. TODO find proper replacement
+        if ($glob === false) return [];
+        /*//hack to fix "File in use" with leveldb. TODO find proper replacement
         return array_map(function ($path) {
             return basename($path);
-        }, $glob);
+        }, $glob);*/
         foreach ($glob as $path) {
             $path .= DIRECTORY_SEPARATOR;
+            if (Server::getInstance()->isLevelLoaded(basename($path))) {
+                $worldNames[] = Server::getInstance()->getLevelByName(basename($path))->getName();
+                continue;
+            }
             $provider = LevelProviderManager::getProvider($path);
             if ($provider !== null) {
                 /** @var LevelProvider $c */

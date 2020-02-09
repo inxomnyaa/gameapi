@@ -2,6 +2,7 @@
 
 namespace xenialdan\gameapi;
 
+use InvalidArgumentException;
 use pocketmine\entity\Attribute;
 use pocketmine\level\Level;
 use pocketmine\level\Position;
@@ -11,6 +12,7 @@ use pocketmine\scheduler\Task;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
+use RuntimeException;
 use xenialdan\apibossbar\DiverseBossBar;
 use xenialdan\gameapi\event\UpdateSignsEvent;
 use xenialdan\gameapi\event\WinEvent;
@@ -379,10 +381,13 @@ class Arena
     /**
      * Sets food, health and saturation to default value, clears inventories
      * @param Player $player
+     * @throws RuntimeException
+     * @throws InvalidArgumentException
      */
     public function resetPlayer(Player $player)
     {
-        $player->setNameTag($player->getDisplayName());
+        $player->setSpawn(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
+        $player->setNameTag($player->getDisplayName());//TODO fix PurePerms tag not showing (or any other custom plugin that changes the display name)
         $player->setHealth($player->getMaxHealth());
         $player->setFood($player->getMaxFood());
         $player->setSaturation($player->getAttributeMap()->getAttribute(Attribute::SATURATION)->getMaxValue());
@@ -432,7 +437,8 @@ class Arena
                 $ev->call();
                 $ev->announce();
             }
-            if ($this->getState() === self::INGAME && count($this->getPlayers()) === 0) $this->setState(self::IDLE);
+            //TODO test - removed that line so the world does reset for 1 player games (i.e. on forcestart)
+            #if ($this->getState() === self::INGAME && count($this->getPlayers()) === 0) $this->setState(self::IDLE);
             if ($this->getState() === self::INGAME) $this->getOwningGame()->getScheduler()->scheduleDelayedTask(new class($this) extends Task
             {
                 /** @var Arena */
@@ -445,7 +451,6 @@ class Arena
                 {
                     $this->arena = $arena;
                 }
-
 
                 /**
                  * Actions to execute when run
