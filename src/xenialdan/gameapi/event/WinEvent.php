@@ -19,7 +19,7 @@ class WinEvent extends PluginEvent
     private $winner;
 
     /**
-     * TeamWinEvent constructor.
+     * WinEvent constructor.
      * @param Plugin $plugin
      * @param Arena $arena
      * @param Team|Player $winner

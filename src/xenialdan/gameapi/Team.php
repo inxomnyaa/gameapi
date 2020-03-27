@@ -6,24 +6,25 @@ use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
 
-class Team{
+class Team
+{
 
-	/** @var Player[] */
-	private $players = [];
-	/** @var Player[] */
-	private $initialplayers = [];
-	/** @var int $max , $min */
-	private $max = 1;
-	private $min = 1;
-	/**
-	 * @var string
-	 */
-	private $name = "unnamed";
-	/**
-	 * @var string
-	 */
-	private $color = TextFormat::RESET;
-	private $spawn;
+    /** @var Player[] */
+    private $players = [];
+    /** @var Player[] */
+    private $initialplayers = [];
+    /** @var int $maxplayers , $minplayers */
+    private $maxplayers = 1;
+    private $minplayers = 1;
+    /**
+     * @var string
+     */
+    private $name = "unnamed";
+    /**
+     * @var string
+     */
+    private $color = TextFormat::RESET;
+    private $spawn;
 
 	/**
 	 * Team constructor.
@@ -122,30 +123,34 @@ class Team{
 	/**
 	 * @param int $max
 	 */
-	public function setMaxPlayers(int $max){
-		$this->max = $max;
-	}
+	public function setMaxPlayers(int $max)
+    {
+        $this->maxplayers = $max;
+    }
 
 	/**
 	 * @return int
 	 */
-	public function getMaxPlayers(){
-		return $this->max;
-	}
+	public function getMaxPlayers()
+    {
+        return $this->maxplayers;
+    }
 
 	/**
 	 * @param int $min
 	 */
-	public function setMinPlayers(int $min){
-		$this->min = $min;
-	}
+	public function setMinPlayers(int $min)
+    {
+        $this->minplayers = $min;
+    }
 
 	/**
 	 * @return int
 	 */
-	public function getMinPlayers(){
-		return $this->min;
-	}
+	public function getMinPlayers()
+    {
+        return $this->minplayers;
+    }
 
 	/**
 	 * @param Vector3 $vector3
