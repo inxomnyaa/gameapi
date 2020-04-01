@@ -7,10 +7,13 @@ use Error;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\event\entity\EntityLevelChangeEvent;
 use pocketmine\event\inventory\InventoryTransactionEvent;
+use pocketmine\event\level\LevelLoadEvent;
 use pocketmine\event\Listener;
 use pocketmine\level\Level;
 use pocketmine\level\LevelException;
+use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\Player;
 use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginException;
@@ -18,6 +21,8 @@ use pocketmine\utils\TextFormat;
 use xenialdan\gameapi\API;
 use xenialdan\gameapi\Game;
 use xenialdan\gameapi\GameAPISettings;
+use xenialdan\gameapi\gamerule\BoolGameRule;
+use xenialdan\gameapi\gamerule\GameRuleList;
 
 class GameAPISettingsListener implements Listener
 {
@@ -180,6 +185,35 @@ class GameAPISettingsListener implements Listener
         $level = $e->getEntity()->getLevel();
         if (!self::isLobby($level)) return;
         $e->setCancelled();
+    }
+
+    /**
+     * @priority HIGH
+     * @param LevelLoadEvent $e
+     */
+    public function lobbyTime(LevelLoadEvent $e): void
+    {
+        if (($time = self::getSettings()->lobbyTime) < 0) return;
+        if (!self::isLobby(($level = $e->getLevel()))) return;
+        $level->setTime($time);
+        $level->stopTime();
+    }
+
+    /**
+     * @priority HIGH
+     * @param EntityLevelChangeEvent $e
+     */
+    public function lobbyTimeGamerule(EntityLevelChangeEvent $e): void
+    {
+        if ($e->isCancelled()) return;
+        if (self::getSettings()->lobbyTime < 0) return;
+        if (!($player = $e->getEntity()) instanceof Player || !$e->getEntity()->isValid()) return;
+        $pk = new GameRulesChangedPacket();
+        $gamerulelist = new GameRuleList();
+        $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, !self::isLobby($e->getTarget())));
+        $pk->gameRules = $gamerulelist->getRules();
+        /** @var Player $player */
+        $player->dataPacket($pk);
     }
 
 }
