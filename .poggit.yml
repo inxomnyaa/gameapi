@@ -9,4 +9,6 @@ projects:
     libs:
     - src: thebigsmilexd/apibossbar/apibossbar
       version: ^0.0.4
+    - src: thebigsmilexd/customui/customui
+      version: ^3.0.0
 ...

@@ -58,7 +58,7 @@ class DefaultSettingsListener implements Listener
         }
 
         self::$registrant = $plugin;
-        $plugin->getServer()->getPluginManager()->registerEvents(new DefaultSettingsListener(), $plugin);
+        $plugin->getServer()->getPluginManager()->registerEvents(new self(), $plugin);
     }
 
     /**

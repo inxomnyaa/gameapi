@@ -14,9 +14,11 @@ use pocketmine\Server;
 use pocketmine\utils\Color;
 use pocketmine\utils\TextFormat;
 use RuntimeException;
+use xenialdan\gameapi\commands\GameConfigCommand;
 use xenialdan\gameapi\commands\GamesCommand;
 use xenialdan\gameapi\commands\GameStatusCommand;
 use xenialdan\gameapi\event\DefaultSettingsListener;
+use xenialdan\gameapi\event\GameAPISettingsListener;
 use xenialdan\gameapi\event\RegisterGameEvent;
 use xenialdan\gameapi\event\StopGameEvent;
 use xenialdan\gameapi\task\ArenaAsyncCopyTask;
@@ -143,7 +145,9 @@ class API
 
         // Make destination directory
         if (!is_dir($dest)) {
-            @mkdir($dest, 0777, true);
+            if (!@mkdir($dest, 0777, true) && !is_dir($dest)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $dest));
+            }
         }
 
         // Loop through the folder
@@ -220,11 +224,19 @@ class API
      */
     public static function registerGame(Game $game)
     {
+        if (!@mkdir($concurrentDirectory = dirname($game->getDataFolder()) . DIRECTORY_SEPARATOR . "GameAPI") && !is_dir($concurrentDirectory)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+        }
         //game command
         if ($game->getServer()->getCommandMap()->register("gameapi", new GamesCommand()))
             $game->getServer()->getLogger()->notice('Registered /games command');
         if ($game->getServer()->getCommandMap()->register("gameapi", new GameStatusCommand()))
             $game->getServer()->getLogger()->notice('Registered /gamestatus command');
+        if ($game->getServer()->getCommandMap()->register("gameapi", new GameConfigCommand()))
+            $game->getServer()->getLogger()->notice('Registered /gameconfig command');
+        //Generic handler for the GameSettings
+        if (!GameAPISettingsListener::isRegistered())
+            GameAPISettingsListener::register($game);
         //Generic handler for the DefaultSettings
         if (!DefaultSettingsListener::isRegistered())
             DefaultSettingsListener::register($game);
@@ -235,6 +247,11 @@ class API
         self::$games[$game->getName()] = $game;
         $ev = new RegisterGameEvent($game);
         $ev->call();
+    }
+
+    public static function getSettings(): GameAPISettings
+    {
+        return GameAPISettingsListener::getSettings();
     }
 
     /**
@@ -315,6 +332,19 @@ class API
         $level = Server::getInstance()->getLevelByName($levelname);
         if (is_null($level)) return null;
         return self::getArenaByLevel($game, $level);
+    }
+
+    /**
+     * @param null|Level $level
+     * @return null|Game
+     */
+    public static function getGameByLevel(?Level $level): ?Game
+    {
+        if (is_null($level)) return null;
+        foreach (self::getGames() as $game) {
+            if (API::isArenaOf($game, $level)) return $game;
+        }
+        return null;
     }
 
     /**
@@ -430,18 +460,5 @@ class API
     public static function toRGB(Color $color): int
     {
         return ($color->getR() << 16) | ($color->getG() << 8) | $color->getB() & 0xffffff;
-    }
-
-    /**
-     * @param null|Level $level
-     * @return null|Game
-     */
-    public static function getGameByLevel(?Level $level): ?Game
-    {
-        if (is_null($level)) return null;
-        foreach (self::getGames() as $game) {
-            if (API::isArenaOf($game, $level)) return $game;
-        }
-        return null;
     }
 }

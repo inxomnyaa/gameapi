@@ -4,6 +4,12 @@ namespace xenialdan\gameapi;
 
 use pocketmine\Player;
 use pocketmine\utils\Config;
+use pocketmine\utils\TextFormat;
+use ReflectionProperty;
+use Throwable;
+use xenialdan\customui\elements\Input;
+use xenialdan\customui\elements\Toggle;
+use xenialdan\customui\windows\CustomForm;
 
 /**
  * Class GameAPISettings
@@ -15,7 +21,7 @@ final class GameAPISettings extends Config
 {
     /** @var string[] Worlds that function as lobby. If this is empty, or the worlds can not be found, the game will generate a world "game_lobby" and use it */
     public $lobbies = [];
-    /** @var bool Default 0 (disabled) - Radius of chunks centered around the lobby spawn that will always be loaded. Whilst this makes teleporting to the lobby faster, it increases memory usage by alot. Maximum is 15 (~500x500 blocks). */
+    /** @var int Default 0 (disabled) - Radius of chunks centered around the lobby spawn that will always be loaded. Whilst this makes teleporting to the lobby faster, it increases memory usage by alot. Maximum is 15 (~500x500 blocks). */
     public $lobbyChunkLoaderRadius = 0;
     /** @var bool Default true - Protects the world from block changes done by players */
     public $lobbyProtectWorld = true;
@@ -47,8 +53,6 @@ final class GameAPISettings extends Config
     public $perLobbyChat = false;
     /** @var bool Default true - Allow private messages when in a game or a lobby */
     public $allowPrivateMessages = true;
-    /** @var bool Default true - Allow private messages when in a game or a lobby */
-    public $allow = true;
 
     public function __construct(string $path)
     {
@@ -79,5 +83,62 @@ final class GameAPISettings extends Config
             }, ARRAY_FILTER_USE_KEY)
         );
         return parent::save();
+    }
+
+    public function getUI(): CustomForm
+    {
+        $form = new CustomForm("Game settings");
+        $keys = $this->getAll(true);
+        $types = [];
+        foreach ($keys as $key) {
+            $value = $this->$key;
+            try {
+                $reflectionProperty = new ReflectionProperty(self::class, $key);
+                $docComment = ($reflectionProperty)->getDocComment();
+                preg_match_all('/\/\*\*\s+@var\s(.+)\s\*\//m', $docComment, $parseDocComment, PREG_SET_ORDER);
+                if (isset($parseDocComment[0][1])) {
+                    [$type, $doc] = explode(" ", $parseDocComment[0][1], 2);
+                } else {
+                    $type = $reflectionProperty->getType()->getName();
+                    $doc = trim($docComment, '/* \t\n\r\0\x0B');
+                }
+                if ($type === "bool") {
+                    $form->addElement(new Toggle(TextFormat::RED . "$type " . $key . "\n" . TextFormat::AQUA . TextFormat::ITALIC . $doc, $value));
+                } else if (is_array($value)) {
+                    $color = stripos($type, "int") ? TextFormat::BLUE : TextFormat::GREEN;
+                    $form->addElement(new Input($color . "$type " . $key . "\n" . TextFormat::AQUA . TextFormat::ITALIC . $doc, $color . "$type " . $key, implode(",", $value)));
+                } else {
+                    $color = $type === "int" ? TextFormat::BLUE : TextFormat::GREEN;
+                    $form->addElement(new Input($color . "$type " . $key . "\n" . TextFormat::AQUA . TextFormat::ITALIC . $doc, $color . "$type " . $key, (string)$value));
+                }
+                $types[$key] = $type;
+            } catch (Throwable $e) {
+            }
+        }
+        $form->setCallable(function (Player $player, array $data) use ($keys, $types): void {
+            foreach ($data as $i => $datum) {
+                $property = $keys[$i];
+                #$oldValue = $this->{$property};
+                $type = $types[$property];
+                if ($type === "string") {
+                    $this->$property = (string)$datum;
+                } else if ($type === "int") {
+                    $this->$property = (int)$datum;
+                } else if ($type === "bool") {
+                    $this->$property = (bool)$datum;
+                } else if ($type === "array" || $type === "string[]") {
+                    $values = explode(",", $datum);
+                    $this->$property = $values;
+                } else if ($type === "int[]") {
+                    $values = explode(",", $datum);
+                    array_walk($values, function ($v): int {
+                        return (int)$v;
+                    });
+                    $this->$property = $values;
+                }
+            }
+            $this->save();
+        });
+        return $form;
     }
 }
