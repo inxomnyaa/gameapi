@@ -37,11 +37,7 @@ class API
     {
         $worldNames = [];
         $glob = glob(Server::getInstance()->getDataPath() . "worlds/*", GLOB_ONLYDIR);
-        if ($glob === false) return [];
-        /*//hack to fix "File in use" with leveldb. TODO find proper replacement
-        return array_map(function ($path) {
-            return basename($path);
-        }, $glob);*/
+        if ($glob === false) return $worldNames;
         foreach ($glob as $path) {
             $path .= DIRECTORY_SEPARATOR;
             if (Server::getInstance()->isLevelLoaded(basename($path))) {
@@ -154,7 +150,7 @@ class API
         $dir = dir($source);
         while (false !== $entry = $dir->read()) {
             // Skip pointers
-            if ($entry == '.' || $entry == '..') {
+            if ($entry === '.' || $entry === '..') {
                 continue;
             }
 
