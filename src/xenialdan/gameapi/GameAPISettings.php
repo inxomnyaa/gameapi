@@ -20,7 +20,7 @@ use xenialdan\customui\windows\CustomForm;
 final class GameAPISettings extends Config
 {
     /** @var string[] Worlds that function as lobby. If this is empty, or the worlds can not be found, the game will generate a world "game_lobby" and use it */
-    public $lobbies = [];
+    public $lobbies = ["game_lobby"];
     /** @var int Default 0 (disabled) - Radius of chunks centered around the lobby spawn that will always be loaded. Whilst this makes teleporting to the lobby faster, it increases memory usage by alot. Maximum is 15 (~500x500 blocks). */
     public $lobbyChunkLoaderRadius = 0;
     /** @var bool Default true - Protects the world from block changes done by players */
@@ -41,7 +41,7 @@ final class GameAPISettings extends Config
     public $lobbyStaticInventory = true;
     /** @var bool Default true - Teleport players back to the lobby spawn when falling into the void */
     public $lobbyVoidRespawn = true;
-    /** @var bool Default "" - If set, this will overwrite the lobby name */
+    /** @var bool Default "" - If set, this will overwrite all lobby names */
     public $lobbyName = "";
     /** @var bool Default "" - If set, this will overwrite the look of the chat messages */
     public $lobbyChatFormat = "";
