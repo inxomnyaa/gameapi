@@ -169,4 +169,17 @@ class GameAPISettingsListener implements Listener
         $e->setCancelled();
     }
 
+    /**
+     * @priority HIGH
+     * @param EntityDamageEvent $e
+     */
+    public function lobbyProtectEntites(EntityDamageEvent $e): void
+    {
+        if (self::getSettings()->lobbyProtectEntites === false) return;
+        if ($e->getEntity() instanceof Player || !$e->getEntity()->isValid()) return;
+        $level = $e->getEntity()->getLevel();
+        if (!self::isLobby($level)) return;
+        $e->setCancelled();
+    }
+
 }
