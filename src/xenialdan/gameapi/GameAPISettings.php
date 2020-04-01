@@ -2,7 +2,6 @@
 
 namespace xenialdan\gameapi;
 
-use pocketmine\level\Level;
 use pocketmine\Player;
 use pocketmine\utils\Config;
 
@@ -26,8 +25,8 @@ final class GameAPISettings extends Config
     public $lobbyProtectEntites = false;
     /** @var int Default ADVENTURE (2) - The ingame-gamemode */
     public $lobbyGamemode = Player::ADVENTURE;
-    /** @var int Default Level::TIME_DAY (0) - Locks the time at the specified number. If set to -1, the day/night circle will continue normally */
-    public $lobbyTime = Level::TIME_DAY;
+    /** @var int Default NOON (6000) - Locks the time at the specified number. If set to -1, the day/night circle will continue normally */
+    public $lobbyTime = 6000;
     /** @var bool Default false - Allow flying in the lobby */
     public $lobbyAllowFlight = false;
     /** @var bool Default true - Clear inventory when joining a lobby. This does not affect the inventory contents in other worlds */
