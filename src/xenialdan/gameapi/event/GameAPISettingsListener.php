@@ -3,14 +3,17 @@
 namespace xenialdan\gameapi\event;
 
 use BadMethodCallException;
+use Error;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
 use pocketmine\level\Level;
+use pocketmine\level\LevelException;
 use pocketmine\Player;
 use pocketmine\plugin\Plugin;
+use pocketmine\plugin\PluginException;
 use pocketmine\utils\TextFormat;
 use xenialdan\gameapi\API;
 use xenialdan\gameapi\Game;
@@ -41,11 +44,13 @@ class GameAPISettingsListener implements Listener
 
     /**
      * @param Game|Plugin $plugin
+     * @throws LevelException
+     * @throws PluginException
      */
     public static function register(Game $plugin): void
     {
         if (self::isRegistered()) {
-            throw new \Error($plugin->getName() . "attempted to register " . self::class . " twice.");
+            throw new Error($plugin->getName() . "attempted to register " . self::class . " twice.");
         }
 
         self::$registrant = $plugin;
@@ -128,7 +133,7 @@ class GameAPISettingsListener implements Listener
     public function lobbyStaticInventory(InventoryTransactionEvent $e): void
     {
         if (self::getSettings()->lobbyStaticInventory === false) return;
-        if (!$e->getTransaction()->getSource()->isValid() || is_null($level = $e->getTransaction()->getSource()->getLevel())) return;
+        if (!$e->getTransaction()->getSource()->isValid() || ($level = $e->getTransaction()->getSource()->getLevel()) === null) return;
         if (!$e->getTransaction()->getSource() instanceof Player) return;
         if (!self::isLobby($level)) return;
         $e->setCancelled();
@@ -138,10 +143,10 @@ class GameAPISettingsListener implements Listener
      * @priority HIGH
      * @param EntityDamageEvent $e
      */
-    public function lobbyVoidRespawn(EntityDamageEvent $e)
+    public function lobbyVoidRespawn(EntityDamageEvent $e): void
     {
         if (self::getSettings()->lobbyVoidRespawn === false) return;
-        if (!$e->getEntity()->isValid() || !$e->getEntity() instanceof Player) return;
+        if (!$e->getEntity() instanceof Player || !$e->getEntity()->isValid()) return;
         $level = $e->getEntity()->getLevel();
         if (!self::isLobby($level)) return;
         $cause = $e->getCause();
@@ -149,6 +154,19 @@ class GameAPISettingsListener implements Listener
             $e->setCancelled();
             $e->getEntity()->teleport($level->getSafeSpawn());
         }
+    }
+
+    /**
+     * @priority HIGH
+     * @param EntityDamageEvent $e
+     */
+    public function lobbyProtectPlayers(EntityDamageEvent $e): void
+    {
+        if (self::getSettings()->lobbyProtectPlayers === false) return;
+        if (!$e->getEntity() instanceof Player || !$e->getEntity()->isValid()) return;
+        $level = $e->getEntity()->getLevel();
+        if (!self::isLobby($level)) return;
+        $e->setCancelled();
     }
 
 }
