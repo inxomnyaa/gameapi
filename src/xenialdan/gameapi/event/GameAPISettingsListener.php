@@ -5,6 +5,7 @@ namespace xenialdan\gameapi\event;
 use BadMethodCallException;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
+use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
 use pocketmine\level\Level;
@@ -87,8 +88,9 @@ class GameAPISettingsListener implements Listener
      * @param Level $level
      * @return bool
      */
-    public static function isLobby(Level $level): bool
+    public static function isLobby(?Level $level): bool
     {
+        if ($level === null) return false;
         return in_array(TextFormat::clean($level->getFolderName()), self::getSettings()->lobbies);
     }
 
@@ -130,6 +132,23 @@ class GameAPISettingsListener implements Listener
         if (!$e->getTransaction()->getSource() instanceof Player) return;
         if (!self::isLobby($level)) return;
         $e->setCancelled();
+    }
+
+    /**
+     * @priority HIGH
+     * @param EntityDamageEvent $e
+     */
+    public function lobbyVoidRespawn(EntityDamageEvent $e)
+    {
+        if (self::getSettings()->lobbyVoidRespawn === false) return;
+        if (!$e->getEntity()->isValid() || !$e->getEntity() instanceof Player) return;
+        $level = $e->getEntity()->getLevel();
+        if (!self::isLobby($level)) return;
+        $cause = $e->getCause();
+        if ($cause === EntityDamageEvent::CAUSE_VOID) {
+            $e->setCancelled();
+            $e->getEntity()->teleport($level->getSafeSpawn());
+        }
     }
 
 }
