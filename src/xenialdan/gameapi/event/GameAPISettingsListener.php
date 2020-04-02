@@ -203,17 +203,28 @@ class GameAPISettingsListener implements Listener
      * @priority HIGH
      * @param EntityLevelChangeEvent $e
      */
-    public function lobbyTimeGamerule(EntityLevelChangeEvent $e): void
+    public function lobbyLevelChange(EntityLevelChangeEvent $e): void
     {
         if ($e->isCancelled()) return;
-        if (self::getSettings()->lobbyTime < 0) return;
-        if (!($player = $e->getEntity()) instanceof Player || !$e->getEntity()->isValid()) return;
-        $pk = new GameRulesChangedPacket();
-        $gamerulelist = new GameRuleList();
-        $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, !self::isLobby($e->getTarget())));
-        $pk->gameRules = $gamerulelist->getRules();
         /** @var Player $player */
-        $player->dataPacket($pk);
+        if (!($player = $e->getEntity()) instanceof Player || !$e->getEntity()->isValid()) return;
+        if (self::getSettings()->lobbyTime >= 0) {
+            $pk = new GameRulesChangedPacket();
+            $gamerulelist = new GameRuleList();
+            $gamerulelist->setRule(new BoolGameRule(GameRuleList::DODAYLIGHTCYCLE, !self::isLobby($e->getTarget())));
+            $pk->gameRules = $gamerulelist->getRules();
+            $player->dataPacket($pk);
+        }
+        if (self::getSettings()->lobbyAllowFlight === true) {
+            $player->setAllowFlight(self::isLobby($e->getTarget()));
+        }
+        if (self::isLobby($e->getTarget())) {
+            $player->setGamemode(self::getSettings()->lobbyGamemode);
+            if (self::getSettings()->lobbyGamemode === Player::ADVENTURE) {
+                //TODO send adventure flags here
+            }
+        }
+        //TODO add lobbyClearInventory here
     }
 
 }

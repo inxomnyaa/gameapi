@@ -21,6 +21,8 @@ final class GameAPISettings extends Config
 {
     /** @var string[] Worlds that function as lobby. If this is empty, or the worlds can not be found, the game will generate a world "game_lobby" and use it */
     public $lobbies = ["game_lobby"];
+    /** @var int Default 0 (disabled) - The amount of players that can be in a lobby. Will be ignored if there is only 1 lobby */
+    public $lobbyPlayerLimit = 0;
     /** @var int Default 0 (disabled) - Radius of chunks centered around the lobby spawn that will always be loaded. Whilst this makes teleporting to the lobby faster, it increases memory usage by alot. Maximum is 15 (~500x500 blocks). */
     public $lobbyChunkLoaderRadius = 0;
     /** @var bool Default true - Protects the world from block changes done by players */
